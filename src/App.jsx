@@ -323,22 +323,22 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 dark:from-gray-900 dark:to-gray-800 p-5 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto bg-white/95 dark:bg-gray-800/95 rounded-3xl shadow-2xl p-8 backdrop-blur-sm transition-all duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-[#B3EBF2] via-[#C9FDF2] to-[#B6F2D1] dark:from-gray-900 dark:to-gray-800 p-5 transition-colors duration-300">
+      <div className="max-w-4xl mx-auto bg-white/80 dark:bg-gray-800/95 rounded-3xl shadow-2xl p-8 backdrop-blur-sm transition-all duration-300 border border-white/30 dark:border-gray-700">
         
         {/* Header */}
         <div className="text-center mb-8 relative">
           <button
             onClick={toggleTheme}
-            className="absolute top-0 right-0 w-12 h-12 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 hover:rotate-12 transition-all duration-300 shadow-lg border-2 border-gray-200 dark:border-gray-600"
+            className="absolute top-0 right-0 w-12 h-12 bg-[#B3EBF2] dark:bg-gray-700 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 hover:rotate-12 transition-all duration-300 shadow-lg border-2 border-[#85D1DB]/60 dark:border-gray-600"
           >
             <span className="text-2xl">{darkMode ? '☀️' : '🌙'}</span>
           </button>
           
-          <h1 className="text-5xl md:text-6xl title-font font-extrabold mb-3 bg-gradient-to-l from-purple-500 to-purple-900 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl title-font font-extrabold mb-3 bg-gradient-to-l from-[#85D1DB] via-[#B6F2D1] to-[#C9FDF2] bg-clip-text text-transparent">
             MetaSign
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <p className="text-[#1F4850] dark:text-gray-400 text-lg">
             <>
               <span className="block text-2xl">Sign Once, Trust Forever</span>
               <span className="block text-base mt-2">Create immutable, verifiable proof of your documents, powered by Ethereum standards.</span>
@@ -359,19 +359,19 @@ function App() {
         </div>
 
         {/* Contract Info */}
-        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6 text-sm transition-colors duration-300">
-          <strong className="text-blue-700 dark:text-blue-300">Smart Contract:</strong>{' '}
-          <span className="text-gray-700 dark:text-gray-300">
+        <div className="bg-[#C9FDF2] dark:bg-blue-900/30 border border-[#85D1DB] dark:border-blue-800 rounded-xl p-4 mb-6 text-sm transition-colors duration-300">
+          <strong className="text-[#2F7A87] dark:text-blue-300">Smart Contract:</strong>{' '}
+          <span className="text-[#1F4850] dark:text-gray-300">
             {CONTRACT_ADDRESS !== "0xYourContractAddressHere" ? CONTRACT_ADDRESS : '⚠️ Not configured'}
           </span>
           <br />
-          <strong className="text-blue-700 dark:text-blue-300">Network:</strong>{' '}
-          <span className="text-gray-700 dark:text-gray-300">Ethereum Holesky Testnet (Chain ID: 17000)</span>
+          <strong className="text-[#2F7A87] dark:text-blue-300">Network:</strong>{' '}
+          <span className="text-[#1F4850] dark:text-gray-300">Ethereum Holesky Testnet (Chain ID: 17000)</span>
         </div>
 
         {/* Wallet Connection Section */}
-        <div className="bg-white dark:bg-gray-700 rounded-2xl p-6 mb-6 shadow-lg border border-gray-200 dark:border-gray-600 transition-all duration-300">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">⚡︎ Wallet Connection</h2>
+        <div className="bg-[#E6FBFF] dark:bg-gray-700 rounded-2xl p-6 mb-6 shadow-lg border border-[#85D1DB]/50 dark:border-gray-600 transition-all duration-300">
+          <h2 className="text-2xl font-bold mb-4 text-[#1F4850] dark:text-gray-100">⚡︎ Wallet Connection</h2>
           {walletConnected ? (
             <button
               onClick={disconnectWallet}
@@ -382,7 +382,7 @@ function App() {
           ) : (
             <button
               onClick={connectWallet}
-              className="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-8 py-3 rounded-full font-bold hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
+              className="bg-gradient-to-r from-[#85D1DB] to-[#B6F2D1] text-[#0F2A30] px-8 py-3 rounded-full font-bold hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
             >
               Connect Wallet
             </button>
@@ -390,26 +390,27 @@ function App() {
         </div>
 
         {/* Sign Document Section */}
-        <div className="bg-white dark:bg-gray-700 rounded-2xl p-6 mb-6 shadow-lg border border-gray-200 dark:border-gray-600 transition-all duration-300">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">𓂃🖊 Sign Document</h2>
+        <div className="bg-[#F0FFFB] dark:bg-gray-700 rounded-2xl p-6 mb-6 shadow-lg border border-[#B6F2D1]/60 dark:border-gray-600 transition-all duration-300">
+          <h2 className="text-2xl font-bold mb-4 text-[#1F4850] dark:text-gray-100">𓂃🖊 Sign Document</h2>
           
           <div className="mb-4">
-            <label className="block mb-2 font-bold text-gray-600 dark:text-gray-300">Upload a file:</label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-gray-600 transition-all duration-300 bg-gray-50 dark:bg-gray-800">
+            <label className="block mb-2 font-bold text-[#2F7A87] dark:text-gray-300">Upload a file:</label>
+            <div className="border-2 border-dashed border-[#85D1DB] dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-[#5FB6C6] hover:bg-[#B6F2D1]/40 dark:hover:bg-gray-600 transition-all duration-300 bg-[#E9FCFF] dark:bg-gray-800">
               <input
                 type="file"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="fileInput"
               />
-              <label htmlFor="fileInput" className="cursor-pointer text-gray-700 dark:text-gray-300">
+              <label htmlFor="fileInput" className="cursor-pointer text-[#1F4850] dark:text-gray-300">
                 📄 Click to upload or drag and drop a file
               </label>
             </div>
             
             {currentFileName && (
-              <div className="mt-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-3 text-sm">
-                <strong className="text-green-700 dark:text-green-300">✓ File loaded:</strong> {currentFileName}
+              <div className="mt-3 bg-[#C9FDF2] dark:bg-green-900/30 border border-[#85D1DB]/50 dark:border-green-800 rounded-lg p-3 text-sm">
+                <strong className="text-green-700 dark:text-green-300">✓ File loaded:</strong>{' '}
+                <span className="text-black dark:text-green-100">{currentFileName}</span>
               </div>
             )}
           </div>
@@ -417,13 +418,13 @@ function App() {
           <button
             onClick={signDocument}
             disabled={signLoading || !currentFile}
-            className="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-8 py-3 rounded-full font-bold hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
+            className="bg-gradient-to-r from-[#85D1DB] to-[#B6F2D1] text-[#0F2A30] px-8 py-3 rounded-full font-bold hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:transform-none"
           >
             {signLoading ? '⏳ Signing...' : 'Sign Document'}
           </button>
 
           {signResult && (
-            <div className="mt-4 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-4 text-sm font-mono break-all max-h-96 overflow-y-auto">
+            <div className="mt-4 bg-[#E9FCFF] dark:bg-gray-800 border border-[#85D1DB]/60 dark:border-gray-600 rounded-lg p-4 text-sm font-mono break-all max-h-96 overflow-y-auto">
               <strong className="text-green-600">✅ Document signed successfully!</strong><br />
               <strong>File Name:</strong> {signResult.fileName}<br />
               <strong>Document Hash:</strong> {signResult.hash}<br />
@@ -443,50 +444,50 @@ function App() {
         </div>
 
         {/* Verify Document Section */}
-        <div className="bg-white dark:bg-gray-700 rounded-2xl p-6 mb-6 shadow-lg border border-gray-200 dark:border-gray-600 transition-all duration-300">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">✔ Verify Document</h2>
+        <div className="bg-[#F0FFFB] dark:bg-gray-700 rounded-2xl p-6 mb-6 shadow-lg border border-[#B6F2D1]/60 dark:border-gray-600 transition-all duration-300">
+          <h2 className="text-2xl font-bold mb-4 text-[#1F4850] dark:text-gray-100">✔ Verify Document</h2>
           
           <div className="mb-4">
-            <label className="block mb-2 font-bold text-gray-600 dark:text-gray-300">Upload document to verify:</label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-gray-600 transition-all duration-300 bg-gray-50 dark:bg-gray-800">
+            <label className="block mb-2 font-bold text-[#2F7A87] dark:text-gray-300">Upload document to verify:</label>
+            <div className="border-2 border-dashed border-[#85D1DB] dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-[#5FB6C6] hover:bg-[#B6F2D1]/40 dark:hover:bg-gray-600 transition-all duration-300 bg-[#E9FCFF] dark:bg-gray-800">
               <input
                 type="file"
                 onChange={handleVerifyFileUpload}
                 className="hidden"
                 id="verifyFileInput"
               />
-              <label htmlFor="verifyFileInput" className="cursor-pointer text-gray-700 dark:text-gray-300">
+              <label htmlFor="verifyFileInput" className="cursor-pointer text-[#1F4850] dark:text-gray-300">
                 📄 Click to upload or drag and drop a file
               </label>
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2 font-bold text-gray-600 dark:text-gray-300">Or enter document hash:</label>
+            <label className="block mb-2 font-bold text-[#2F7A87] dark:text-gray-300">Or enter document hash:</label>
             <input
               type="text"
               value={documentHash}
               onChange={(e) => setDocumentHash(e.target.value)}
               placeholder="Enter document hash"
-              className="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:border-purple-500 focus:outline-none transition-colors duration-300"
+              className="w-full p-3 border-2 border-[#85D1DB] dark:border-gray-600 rounded-lg bg-white/90 dark:bg-gray-800 text-[#0F2A30] dark:text-gray-200 focus:border-[#5FB6C6] focus:outline-none transition-colors duration-300"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2 font-bold text-gray-600 dark:text-gray-300">Signer Address (optional):</label>
+            <label className="block mb-2 font-bold text-[#2F7A87] dark:text-gray-300">Signer Address (optional):</label>
             <input
               type="text"
               value={signerAddress}
               onChange={(e) => setSignerAddress(e.target.value)}
               placeholder="Enter signer's address to verify ownership"
-              className="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:border-purple-500 focus:outline-none transition-colors duration-300"
+              className="w-full p-3 border-2 border-[#85D1DB] dark:border-gray-600 rounded-lg bg-white/90 dark:bg-gray-800 text-[#0F2A30] dark:text-gray-200 focus:border-[#5FB6C6] focus:outline-none transition-colors duration-300"
             />
           </div>
 
           <button
             onClick={verifyDocument}
             disabled={verifyLoading}
-            className="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-8 py-3 rounded-full font-bold hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
+            className="bg-gradient-to-r from-[#85D1DB] to-[#B6F2D1] text-[#0F2A30] px-8 py-3 rounded-full font-bold hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:transform-none"
           >
             {verifyLoading ? '⏳ Verifying...' : 'Verify Document'}
           </button>
@@ -494,7 +495,7 @@ function App() {
           {verifyResult && (
             <div className={`mt-4 p-4 rounded-lg text-center font-bold ${
               verifyResult.valid
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-800'
+                ? 'bg-[#C9FDF2] dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-[#85D1DB]/50 dark:border-green-800'
                 : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800'
             }`}>
               {verifyResult.valid ? (
@@ -524,28 +525,28 @@ function App() {
         </div>
 
         {/* Document History Section */}
-        <div className="bg-white dark:bg-gray-700 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 transition-all duration-300">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">🗒 Document History</h2>
+        <div className="bg-[#F0FFFB] dark:bg-gray-700 rounded-2xl p-6 shadow-lg border border-[#B6F2D1]/60 dark:border-gray-600 transition-all duration-300">
+          <h2 className="text-2xl font-bold mb-4 text-[#1F4850] dark:text-gray-100">🗒 Document History</h2>
           
           <button
             onClick={getDocumentHistory}
             disabled={historyLoading}
-            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-8 py-3 rounded-full font-bold hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
+            className="bg-gradient-to-r from-[#85D1DB] to-[#B6F2D1] text-[#0F2A30] px-8 py-3 rounded-full font-bold hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:transform-none"
           >
             {historyLoading ? '⏳ Loading...' : 'Load My Documents'}
           </button>
 
           {historyData.length > 0 && (
-            <div className="mt-4 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-4 text-sm max-h-96 overflow-y-auto">
-              <strong className="text-gray-800 dark:text-gray-200">Your signed documents ({historyData.length}):</strong>
+            <div className="mt-4 bg-[#E9FCFF] dark:bg-gray-800 border border-[#85D1DB]/60 dark:border-gray-600 rounded-lg p-4 text-sm max-h-96 overflow-y-auto">
+              <strong className="text-[#1F4850] dark:text-gray-200">Your signed documents ({historyData.length}):</strong>
               <div className="mt-3 space-y-3">
                 {historyData.map((doc, index) => (
-                  <div key={index} className="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <strong className="text-gray-800 dark:text-gray-200">Document {index + 1}:</strong><br />
-                    <strong className="text-gray-600 dark:text-gray-400">Title:</strong> {doc.title}<br />
-                    <strong className="text-gray-600 dark:text-gray-400">Hash:</strong> <span className="font-mono text-xs">{doc.hash}</span><br />
-                    <strong className="text-gray-600 dark:text-gray-400">Signed:</strong> {doc.timestamp}<br />
-                    <strong className="text-gray-600 dark:text-gray-400">IPFS:</strong> {doc.ipfsHash}
+                  <div key={index} className="bg-white/80 dark:bg-gray-700 p-3 rounded-lg border border-[#85D1DB]/50 dark:border-gray-600">
+                    <strong className="text-[#1F4850] dark:text-gray-200">Document {index + 1}:</strong><br />
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Title:</strong> {doc.title}<br />
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Hash:</strong> <span className="font-mono text-xs">{doc.hash}</span><br />
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Signed:</strong> {doc.timestamp}<br />
+                    <strong className="text-[#2F7A87] dark:text-gray-400">IPFS:</strong> {doc.ipfsHash}
                   </div>
                 ))}
               </div>
@@ -553,7 +554,7 @@ function App() {
           )}
 
           {historyData.length === 0 && !historyLoading && (
-            <div className="mt-4 text-gray-600 dark:text-gray-400 text-center">
+            <div className="mt-4 text-[#2F7A87] dark:text-gray-400 text-center">
               No documents found. Click "Load My Documents" to check your history.
             </div>
           )}
