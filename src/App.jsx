@@ -43,8 +43,8 @@ const contractABI = [
   }
 ];
 
-// ⚠️ IMPORTANT: Replace this with your deployed contract address
-const CONTRACT_ADDRESS = "0xYourContractAddressHere";
+// Contract address from environment variables
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -87,7 +87,7 @@ function App() {
       const web3Provider = new ethers.BrowserProvider(window.ethereum);
       setProvider(web3Provider);
       
-      if (CONTRACT_ADDRESS !== "0xYourContractAddressHere") {
+      if (CONTRACT_ADDRESS) {
         const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, contractABI, web3Provider);
         setContract(contractInstance);
       }
@@ -128,26 +128,31 @@ function App() {
 
       // Check network
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (chainId !== '0x4268') {
+      const targetChainId = import.meta.env.VITE_CHAIN_ID || '0x4268';
+      const targetChainName = import.meta.env.VITE_CHAIN_NAME || 'Holesky';
+      const targetRpcUrl = import.meta.env.VITE_RPC_URL || 'https://ethereum-holesky.publicnode.com';
+      const targetExplorerUrl = import.meta.env.VITE_EXPLORER_URL || 'https://holesky.etherscan.io';
+      
+      if (chainId !== targetChainId) {
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0x4268' }],
+            params: [{ chainId: targetChainId }],
           });
         } catch (switchError) {
           if (switchError.code === 4902) {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
               params: [{
-                chainId: '0x4268',
-                chainName: 'Holesky',
-                rpcUrls: ['https://ethereum-holesky.publicnode.com'],
+                chainId: targetChainId,
+                chainName: targetChainName,
+                rpcUrls: [targetRpcUrl],
                 nativeCurrency: {
                   name: 'Holesky Ether',
                   symbol: 'ETH',
                   decimals: 18
                 },
-                blockExplorerUrls: ['https://holesky.etherscan.io']
+                blockExplorerUrls: [targetExplorerUrl]
               }]
             });
           }
@@ -226,8 +231,8 @@ function App() {
 
     if (!contract) {
       alert(
-        CONTRACT_ADDRESS === "0xYourContractAddressHere"
-          ? 'Smart contract address is not configured. Please update CONTRACT_ADDRESS before signing.'
+        !CONTRACT_ADDRESS
+          ? 'Smart contract address is not configured. Please set VITE_CONTRACT_ADDRESS in your environment variables.'
           : 'Contract not initialized. Please reload the dApp and try again.'
       );
       return;
@@ -276,8 +281,8 @@ function App() {
   const verifyDocument = async () => {
     if (!contract) {
       alert(
-        CONTRACT_ADDRESS === "0xYourContractAddressHere"
-          ? 'Smart contract address is not configured. Please update CONTRACT_ADDRESS before verifying.'
+        !CONTRACT_ADDRESS
+          ? 'Smart contract address is not configured. Please set VITE_CONTRACT_ADDRESS in your environment variables.'
           : 'Contract not initialized. Please reload the dApp and try again.'
       );
       return;
@@ -332,8 +337,8 @@ function App() {
 
     if (!contract) {
       alert(
-        CONTRACT_ADDRESS === "0xYourContractAddressHere"
-          ? 'Smart contract address is not configured. Please update CONTRACT_ADDRESS before loading history.'
+        !CONTRACT_ADDRESS
+          ? 'Smart contract address is not configured. Please set VITE_CONTRACT_ADDRESS in your environment variables.'
           : 'Contract not initialized. Please reload the dApp and try again.'
       );
       return;
@@ -417,11 +422,13 @@ function App() {
         <div className="bg-[#C9FDF2] dark:bg-blue-900/30 border border-[#85D1DB] dark:border-blue-800 rounded-xl p-4 mb-6 text-sm transition-colors duration-300">
           <strong className="text-[#2F7A87] dark:text-blue-300">Smart Contract:</strong>{' '}
           <span className="text-[#1F4850] dark:text-gray-300">
-            {CONTRACT_ADDRESS !== "0xYourContractAddressHere" ? CONTRACT_ADDRESS : '⚠️ Not configured'}
+            {CONTRACT_ADDRESS || '⚠️ Not configured'}
           </span>
           <br />
           <strong className="text-[#2F7A87] dark:text-blue-300">Network:</strong>{' '}
-          <span className="text-[#1F4850] dark:text-gray-300">Ethereum Holesky Testnet (Chain ID: 17000)</span>
+          <span className="text-[#1F4850] dark:text-gray-300">
+            {import.meta.env.VITE_CHAIN_NAME || 'Holesky'} Testnet (Chain ID: {parseInt(import.meta.env.VITE_CHAIN_ID || '0x4268', 16)})
+          </span>
         </div>
 
         {/* Wallet Connection Section */}
@@ -500,7 +507,7 @@ function App() {
               <strong>Signer:</strong> {signResult.signer}<br />
               <strong>Transaction:</strong>{' '}
               <a 
-                href={`https://holesky.etherscan.io/tx/${signResult.txHash}`}
+                href={`${import.meta.env.VITE_EXPLORER_URL || 'https://holesky.etherscan.io'}/tx/${signResult.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
