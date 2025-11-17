@@ -7,7 +7,6 @@ const contractABI = [
   {
     "inputs": [
       {"internalType": "bytes32", "name": "documentHash", "type": "bytes32"},
-      {"internalType": "string", "name": "ipfsHash", "type": "string"},
       {"internalType": "string", "name": "documentTitle", "type": "string"}
     ],
     "name": "signDocument",
@@ -24,7 +23,6 @@ const contractABI = [
       {"internalType": "bool", "name": "exists", "type": "bool"},
       {"internalType": "address", "name": "signer", "type": "address"},
       {"internalType": "uint256", "name": "timestamp", "type": "uint256"},
-      {"internalType": "string", "name": "ipfsHash", "type": "string"},
       {"internalType": "string", "name": "documentTitle", "type": "string"}
     ],
     "stateMutability": "view",
@@ -251,10 +249,9 @@ function App() {
       const contractWithSigner = contract.connect(signer);
 
       const docHash = ethers.keccak256(ethers.toUtf8Bytes(currentFile));
-      const ipfsHash = `ipfs_${docHash.substring(2, 10)}`;
       const documentTitle = currentFileName || `Document_${Date.now()}`;
 
-      const tx = await contractWithSigner.signDocument(docHash, ipfsHash, documentTitle);
+      const tx = await contractWithSigner.signDocument(docHash, documentTitle);
       const receipt = await tx.wait();
 
       setSignResult({
@@ -311,7 +308,6 @@ function App() {
           documentTitle: result.documentTitle,
           signer: result.signer,
           timestamp: timestamp.toLocaleString(),
-          ipfsHash: result.ipfsHash,
           hash: hashToVerify,
           matchesSigner: !signerAddress || result.signer.toLowerCase() === signerAddress.toLowerCase()
         });
@@ -353,8 +349,7 @@ function App() {
         return {
           hash,
           title: details.documentTitle,
-          timestamp: new Date(Number(details.timestamp) * 1000).toLocaleString(),
-          ipfsHash: details.ipfsHash
+          timestamp: new Date(Number(details.timestamp) * 1000).toLocaleString()
         };
       });
 
@@ -595,7 +590,6 @@ function App() {
                     <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
                     <strong>Signer:</strong> {verifyResult.signer}<br />
                     <strong>Signed at:</strong> {verifyResult.timestamp}<br />
-                    <strong>IPFS Hash:</strong> {verifyResult.ipfsHash}<br />
                     <strong>Document Hash:</strong> {verifyResult.hash}
                     {!verifyResult.matchesSigner && (
                       <div className="mt-2 text-yellow-700 dark:text-yellow-400">
@@ -635,8 +629,7 @@ function App() {
                     <strong className="text-[#1F4850] dark:text-gray-200">Document {index + 1}:</strong><br />
                     <strong className="text-[#2F7A87] dark:text-gray-400">Title:</strong> {doc.title}<br />
                     <strong className="text-[#2F7A87] dark:text-gray-400">Hash:</strong> <span className="font-mono text-xs">{doc.hash}</span><br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Signed:</strong> {doc.timestamp}<br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">IPFS:</strong> {doc.ipfsHash}
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Signed:</strong> {doc.timestamp}
                   </div>
                 ))}
               </div>
