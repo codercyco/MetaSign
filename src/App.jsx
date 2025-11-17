@@ -371,7 +371,7 @@ function App() {
 
         {/* Wallet Connection Section */}
         <div className="bg-white dark:bg-gray-700 rounded-2xl p-6 mb-6 shadow-lg border border-gray-200 dark:border-gray-600 transition-all duration-300">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">🔌 Wallet Connection</h2>
+          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">⚡︎ Wallet Connection</h2>
           {walletConnected ? (
             <button
               onClick={disconnectWallet}
