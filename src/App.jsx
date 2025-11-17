@@ -7,7 +7,8 @@ const contractABI = [
   {
     "inputs": [
       {"internalType": "bytes32", "name": "documentHash", "type": "bytes32"},
-      {"internalType": "string", "name": "documentTitle", "type": "string"}
+      {"internalType": "string", "name": "documentTitle", "type": "string"},
+      {"internalType": "bytes", "name": "signature", "type": "bytes"}
     ],
     "name": "signDocument",
     "outputs": [],
@@ -23,7 +24,8 @@ const contractABI = [
       {"internalType": "bool", "name": "exists", "type": "bool"},
       {"internalType": "address", "name": "signer", "type": "address"},
       {"internalType": "uint256", "name": "timestamp", "type": "uint256"},
-      {"internalType": "string", "name": "documentTitle", "type": "string"}
+      {"internalType": "string", "name": "documentTitle", "type": "string"},
+      {"internalType": "bytes", "name": "signature", "type": "bytes"}
     ],
     "stateMutability": "view",
     "type": "function"
@@ -250,14 +252,18 @@ function App() {
 
       const docHash = ethers.keccak256(ethers.toUtf8Bytes(currentFile));
       const documentTitle = currentFileName || `Document_${Date.now()}`;
+      
+      // Create signature of the document hash
+      const signature = await signer.signMessage(ethers.getBytes(docHash));
 
-      const tx = await contractWithSigner.signDocument(docHash, documentTitle);
+      const tx = await contractWithSigner.signDocument(docHash, documentTitle, signature);
       const receipt = await tx.wait();
 
       setSignResult({
         success: true,
         fileName: documentTitle,
         hash: docHash,
+        signature: signature,
         signer: userAccount,
         txHash: receipt.hash,
         blockNumber: receipt.blockNumber
@@ -308,6 +314,7 @@ function App() {
           documentTitle: result.documentTitle,
           signer: result.signer,
           timestamp: timestamp.toLocaleString(),
+          signature: result.signature,
           hash: hashToVerify,
           matchesSigner: !signerAddress || result.signer.toLowerCase() === signerAddress.toLowerCase()
         });
@@ -349,7 +356,8 @@ function App() {
         return {
           hash,
           title: details.documentTitle,
-          timestamp: new Date(Number(details.timestamp) * 1000).toLocaleString()
+          timestamp: new Date(Number(details.timestamp) * 1000).toLocaleString(),
+          signature: details.signature
         };
       });
 
@@ -499,6 +507,7 @@ function App() {
               <strong className="text-green-600">✅ Document signed successfully!</strong><br />
               <strong>File Name:</strong> {signResult.fileName}<br />
               <strong>Document Hash:</strong> {signResult.hash}<br />
+              <strong>Digital Signature:</strong> <span className="text-xs break-all">{signResult.signature}</span><br />
               <strong>Signer:</strong> {signResult.signer}<br />
               <strong>Transaction:</strong>{' '}
               <a 
@@ -590,6 +599,7 @@ function App() {
                     <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
                     <strong>Signer:</strong> {verifyResult.signer}<br />
                     <strong>Signed at:</strong> {verifyResult.timestamp}<br />
+                    <strong>Digital Signature:</strong> <span className="text-xs break-all">{verifyResult.signature}</span><br />
                     <strong>Document Hash:</strong> {verifyResult.hash}
                     {!verifyResult.matchesSigner && (
                       <div className="mt-2 text-yellow-700 dark:text-yellow-400">
@@ -629,6 +639,7 @@ function App() {
                     <strong className="text-[#1F4850] dark:text-gray-200">Document {index + 1}:</strong><br />
                     <strong className="text-[#2F7A87] dark:text-gray-400">Title:</strong> {doc.title}<br />
                     <strong className="text-[#2F7A87] dark:text-gray-400">Hash:</strong> <span className="font-mono text-xs">{doc.hash}</span><br />
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Signature:</strong> <span className="font-mono text-xs break-all">{doc.signature}</span><br />
                     <strong className="text-[#2F7A87] dark:text-gray-400">Signed:</strong> {doc.timestamp}
                   </div>
                 ))}
