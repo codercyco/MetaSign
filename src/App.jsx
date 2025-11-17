@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
@@ -52,6 +52,8 @@ function App() {
   const [userAccount, setUserAccount] = useState('');
   const [provider, setProvider] = useState(null);
   const [contract, setContract] = useState(null);
+  const fileInputRef = useRef(null);
+  const verifyInputRef = useRef(null);
   
   // Sign document states
   const [currentFile, setCurrentFile] = useState(null);
@@ -157,16 +159,39 @@ function App() {
     }
   };
 
+  const loadSigningFile = (file) => {
+    setCurrentFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setCurrentFile(event.target.result);
+    };
+    reader.readAsText(file);
+  };
+
+  const loadVerifyFile = (file) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setVerifyFile(event.target.result);
+      const hash = ethers.keccak256(ethers.toUtf8Bytes(event.target.result));
+      setDocumentHash(hash);
+    };
+    reader.readAsText(file);
+  };
+
   // Handle file upload for signing
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setCurrentFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setCurrentFile(event.target.result);
-      };
-      reader.readAsText(file);
+      loadSigningFile(file);
+    }
+  };
+
+  const handleSignDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      loadSigningFile(file);
     }
   };
 
@@ -174,20 +199,37 @@ function App() {
   const handleVerifyFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setVerifyFile(event.target.result);
-        const hash = ethers.keccak256(ethers.toUtf8Bytes(event.target.result));
-        setDocumentHash(hash);
-      };
-      reader.readAsText(file);
+      loadVerifyFile(file);
     }
+  };
+
+  const handleVerifyDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      loadVerifyFile(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   // Sign document
   const signDocument = async () => {
-    if (!contract || !userAccount) {
+    if (!userAccount) {
       alert('Please connect your wallet first');
+      return;
+    }
+
+    if (!contract) {
+      alert(
+        CONTRACT_ADDRESS === "0xYourContractAddressHere"
+          ? 'Smart contract address is not configured. Please update CONTRACT_ADDRESS before signing.'
+          : 'Contract not initialized. Please reload the dApp and try again.'
+      );
       return;
     }
 
@@ -233,7 +275,11 @@ function App() {
   // Verify document
   const verifyDocument = async () => {
     if (!contract) {
-      alert('Contract not initialized');
+      alert(
+        CONTRACT_ADDRESS === "0xYourContractAddressHere"
+          ? 'Smart contract address is not configured. Please update CONTRACT_ADDRESS before verifying.'
+          : 'Contract not initialized. Please reload the dApp and try again.'
+      );
       return;
     }
 
@@ -279,8 +325,17 @@ function App() {
 
   // Get document history
   const getDocumentHistory = async () => {
-    if (!contract || !userAccount) {
-      alert('Please connect wallet first');
+    if (!userAccount) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    if (!contract) {
+      alert(
+        CONTRACT_ADDRESS === "0xYourContractAddressHere"
+          ? 'Smart contract address is not configured. Please update CONTRACT_ADDRESS before loading history.'
+          : 'Contract not initialized. Please reload the dApp and try again.'
+      );
       return;
     }
 
@@ -335,7 +390,7 @@ function App() {
             <span className="text-2xl">{darkMode ? '☀️' : '🌙'}</span>
           </button>
           
-          <h1 className="text-5xl md:text-6xl title-font font-extrabold mb-3 bg-gradient-to-l from-[#85D1DB] via-[#B6F2D1] to-[#C9FDF2] bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl title-font font-extrabold mb-3 bg-gradient-to-l from-[#4edbed] via-[#87ecb4] to-[#92e6d4] bg-clip-text text-transparent">
             MetaSign
           </h1>
           <p className="text-[#1F4850] dark:text-gray-400 text-lg">
@@ -395,14 +450,28 @@ function App() {
           
           <div className="mb-4">
             <label className="block mb-2 font-bold text-[#2F7A87] dark:text-gray-300">Upload a file:</label>
-            <div className="border-2 border-dashed border-[#85D1DB] dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-[#5FB6C6] hover:bg-[#B6F2D1]/40 dark:hover:bg-gray-600 transition-all duration-300 bg-[#E9FCFF] dark:bg-gray-800">
+            <div
+              className="border-2 border-dashed border-[#85D1DB] dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-[#5FB6C6] hover:bg-[#B6F2D1]/40 dark:hover:bg-gray-600 transition-all duration-300 bg-[#E9FCFF] dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5FB6C6]"
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              onDragOver={handleDragOver}
+              onDrop={handleSignDrop}
+            >
               <input
+                ref={fileInputRef}
                 type="file"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="fileInput"
               />
-              <label htmlFor="fileInput" className="cursor-pointer text-[#1F4850] dark:text-gray-300">
+              <label htmlFor="fileInput" className="cursor-pointer text-[#1F4850] dark:text-gray-300 block">
                 📄 Click to upload or drag and drop a file
               </label>
             </div>
@@ -449,14 +518,28 @@ function App() {
           
           <div className="mb-4">
             <label className="block mb-2 font-bold text-[#2F7A87] dark:text-gray-300">Upload document to verify:</label>
-            <div className="border-2 border-dashed border-[#85D1DB] dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-[#5FB6C6] hover:bg-[#B6F2D1]/40 dark:hover:bg-gray-600 transition-all duration-300 bg-[#E9FCFF] dark:bg-gray-800">
+            <div
+              className="border-2 border-dashed border-[#85D1DB] dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-[#5FB6C6] hover:bg-[#B6F2D1]/40 dark:hover:bg-gray-600 transition-all duration-300 bg-[#E9FCFF] dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5FB6C6]"
+              onClick={() => verifyInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  verifyInputRef.current?.click();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              onDragOver={handleDragOver}
+              onDrop={handleVerifyDrop}
+            >
               <input
+                ref={verifyInputRef}
                 type="file"
                 onChange={handleVerifyFileUpload}
                 className="hidden"
                 id="verifyFileInput"
               />
-              <label htmlFor="verifyFileInput" className="cursor-pointer text-[#1F4850] dark:text-gray-300">
+              <label htmlFor="verifyFileInput" className="cursor-pointer text-[#1F4850] dark:text-gray-300 block">
                 📄 Click to upload or drag and drop a file
               </label>
             </div>
