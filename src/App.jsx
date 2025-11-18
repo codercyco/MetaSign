@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
-// Smart contract ABI
+// Smart contract ABI (Updated for secure version)
 const contractABI = [
   {
     "inputs": [
       {"internalType": "bytes32", "name": "documentHash", "type": "bytes32"},
       {"internalType": "string", "name": "documentTitle", "type": "string"},
-      {"internalType": "bytes", "name": "signature", "type": "bytes"}
+      {"internalType": "bytes", "name": "signature", "type": "bytes"},
+      {"internalType": "uint256", "name": "nonce", "type": "uint256"}
     ],
     "name": "signDocument",
     "outputs": [],
@@ -25,9 +26,10 @@ const contractABI = [
       {"internalType": "address", "name": "signer", "type": "address"},
       {"internalType": "uint256", "name": "timestamp", "type": "uint256"},
       {"internalType": "string", "name": "documentTitle", "type": "string"},
-      {"internalType": "bytes", "name": "signature", "type": "bytes"}
+      {"internalType": "bytes", "name": "signature", "type": "bytes"},
+      {"internalType": "bool", "name": "signatureValid", "type": "bool"}
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -37,6 +39,28 @@ const contractABI = [
     "name": "getDocumentsBySigner",
     "outputs": [
       {"internalType": "bytes32[]", "name": "", "type": "bytes32[]"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "signer", "type": "address"}
+    ],
+    "name": "getSignerNonce",
+    "outputs": [
+      {"internalType": "uint256", "name": "", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "bytes32", "name": "documentHash", "type": "bytes32"}
+    ],
+    "name": "documentExists",
+    "outputs": [
+      {"internalType": "bool", "name": "", "type": "bool"}
     ],
     "stateMutability": "view",
     "type": "function"
@@ -253,10 +277,19 @@ function App() {
       const docHash = ethers.keccak256(ethers.toUtf8Bytes(currentFile));
       const documentTitle = currentFileName || `Document_${Date.now()}`;
       
-      // Create signature of the document hash
-      const signature = await signer.signMessage(ethers.getBytes(docHash));
+      // Get current nonce for the signer
+      const nonce = await contract.getSignerNonce(userAccount);
+      
+      // Create the message hash that needs to be signed (same as contract)
+      const messageToSign = ethers.solidityPackedKeccak256(
+        ['bytes32', 'string', 'uint256', 'address'],
+        [docHash, documentTitle, nonce, CONTRACT_ADDRESS]
+      );
+      
+      // Create signature of the message hash
+      const signature = await signer.signMessage(ethers.getBytes(messageToSign));
 
-      const tx = await contractWithSigner.signDocument(docHash, documentTitle, signature);
+      const tx = await contractWithSigner.signDocument(docHash, documentTitle, signature, nonce);
       const receipt = await tx.wait();
 
       setSignResult({
@@ -266,7 +299,8 @@ function App() {
         signature: signature,
         signer: userAccount,
         txHash: receipt.hash,
-        blockNumber: receipt.blockNumber
+        blockNumber: receipt.blockNumber,
+        nonce: nonce.toString()
       });
 
       // Clear file
@@ -310,7 +344,8 @@ function App() {
       if (result.exists) {
         const timestamp = new Date(Number(result.timestamp) * 1000);
         setVerifyResult({
-          valid: true,
+          valid: result.exists,
+          signatureValid: result.signatureValid, // New cryptographic validation
           documentTitle: result.documentTitle,
           signer: result.signer,
           timestamp: timestamp.toLocaleString(),
@@ -320,7 +355,8 @@ function App() {
         });
       } else {
         setVerifyResult({
-          valid: false
+          valid: false,
+          signatureValid: false
         });
       }
     } catch (error) {
@@ -509,9 +545,10 @@ function App() {
               <strong>Document Hash:</strong> {signResult.hash}<br />
               <strong>Digital Signature:</strong> <span className="text-xs break-all">{signResult.signature}</span><br />
               <strong>Signer:</strong> {signResult.signer}<br />
+              <strong>Nonce:</strong> {signResult.nonce}<br />
               <strong>Transaction:</strong>{' '}
               <a 
-                href={`${import.meta.env.VITE_EXPLORER_URL || 'https://holesky.etherscan.io'}/tx/${signResult.txHash}`}
+                href={`${import.meta.env.VITE_EXPLORER_URL || 'https://explorer.hoodi.io'}/tx/${signResult.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
@@ -588,26 +625,45 @@ function App() {
 
           {verifyResult && (
             <div className={`mt-4 p-4 rounded-lg text-center font-bold ${
-              verifyResult.valid
+              verifyResult.valid && verifyResult.signatureValid
                 ? 'bg-[#C9FDF2] dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-[#85D1DB]/50 dark:border-green-800'
+                : verifyResult.valid && !verifyResult.signatureValid
+                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-800'
                 : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800'
             }`}>
               {verifyResult.valid ? (
-                <>
-                  ✅ Document is VALID<br />
-                  <div className="text-left mt-2 text-sm">
-                    <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
-                    <strong>Signer:</strong> {verifyResult.signer}<br />
-                    <strong>Signed at:</strong> {verifyResult.timestamp}<br />
-                    <strong>Digital Signature:</strong> <span className="text-xs break-all">{verifyResult.signature}</span><br />
-                    <strong>Document Hash:</strong> {verifyResult.hash}
-                    {!verifyResult.matchesSigner && (
-                      <div className="mt-2 text-yellow-700 dark:text-yellow-400">
-                        ⚠️ WARNING: Signer address does not match provided address
+                verifyResult.signatureValid ? (
+                  <>
+                    ✅ Document is VALID & CRYPTOGRAPHICALLY SECURE<br />
+                    <div className="text-left mt-2 text-sm">
+                      <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
+                      <strong>Signer:</strong> {verifyResult.signer}<br />
+                      <strong>Signed at:</strong> {verifyResult.timestamp}<br />
+                      <strong>Signature Status:</strong> <span className="text-green-600 dark:text-green-400">✅ Cryptographically Valid</span><br />
+                      <strong>Digital Signature:</strong> <span className="text-xs break-all">{verifyResult.signature}</span><br />
+                      <strong>Document Hash:</strong> {verifyResult.hash}
+                      {!verifyResult.matchesSigner && (
+                        <div className="mt-2 text-yellow-700 dark:text-yellow-400">
+                          ⚠️ WARNING: Signer address does not match provided address
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    ⚠️ Document EXISTS but SIGNATURE IS INVALID<br />
+                    <div className="text-left mt-2 text-sm">
+                      <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
+                      <strong>Signer:</strong> {verifyResult.signer}<br />
+                      <strong>Signed at:</strong> {verifyResult.timestamp}<br />
+                      <strong>Signature Status:</strong> <span className="text-red-600 dark:text-red-400">❌ Cryptographically Invalid</span><br />
+                      <strong>Document Hash:</strong> {verifyResult.hash}<br />
+                      <div className="mt-2 text-red-700 dark:text-red-400">
+                        🚨 WARNING: This document's signature cannot be verified. It may have been tampered with.
                       </div>
-                    )}
-                  </div>
-                </>
+                    </div>
+                  </>
+                )
               ) : (
                 <>
                   ❌ Document is INVALID or NOT FOUND<br />

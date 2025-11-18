@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 /**
  * @title MetaSign - Document Signing and Verification Contract
  * @dev A smart contract for cryptographic document signing and verification
@@ -13,11 +15,13 @@ pragma solidity ^0.8.19;
  * 
  * Key Features:
  * - Stores document hash (Keccak-256) for content integrity
- * - Stores digital signature for non-repudiation
+ * - Verifies digital signature cryptographically using ECDSA
  * - Maintains per-signer document registry
  * - Provides immutable proof of existence and authorship
+ * - Prevents signature replay attacks with nonce system
  */
 contract MetaSign {
+    using ECDSA for bytes32;
     
     // Structure to store document signing information
     struct DocumentRecord {
@@ -26,6 +30,7 @@ contract MetaSign {
         uint256 timestamp;     // Block timestamp when document was signed
         string documentTitle;  // Human-readable title/name of the document
         bytes signature;       // Digital signature of the document hash
+        uint256 nonce;         // Unique nonce for replay protection
     }
     
     // Mapping from document hash to its signing record
@@ -34,42 +39,73 @@ contract MetaSign {
     // Mapping from signer address to array of document hashes they've signed
     mapping(address => bytes32[]) public documentsBySigner;
     
+    // Mapping from signer to their current nonce (prevents replay attacks)
+    mapping(address => uint256) public signerNonces;
+    
     // Events for logging contract activities
     event DocumentSigned(
         bytes32 indexed documentHash,
         address indexed signer,
         string documentTitle,
         uint256 timestamp,
-        bytes signature
+        bytes signature,
+        uint256 nonce
     );
     
     event DocumentVerified(
         bytes32 indexed documentHash,
         address indexed verifier,
-        bool exists
+        bool exists,
+        bool signatureValid
     );
+    
+    // Custom errors for gas efficiency
+    error EmptyDocumentHash();
+    error EmptyDocumentTitle();
+    error EmptySignature();
+    error DocumentAlreadySigned();
+    error InvalidSignature();
+    error InvalidNonce();
     
     /**
      * @dev Sign a document by storing its hash, title, and digital signature
      * @param documentHash Keccak-256 hash of the document content
      * @param documentTitle Human-readable title or name for the document
-     * @param signature Digital signature of the document hash (created off-chain)
+     * @param signature Digital signature of the message hash (created off-chain)
+     * @param nonce Unique nonce to prevent replay attacks
      * 
      * Requirements:
      * - Document with this hash must not already exist
      * - Document title cannot be empty
      * - Signature cannot be empty
+     * - Signature must be valid and match the signer
+     * - Nonce must match expected value for the signer
      */
     function signDocument(
         bytes32 documentHash,
         string calldata documentTitle,
-        bytes calldata signature
+        bytes calldata signature,
+        uint256 nonce
     ) external {
         // Validate inputs
-        require(documentHash != bytes32(0), "MetaSign: Document hash cannot be empty");
-        require(bytes(documentTitle).length > 0, "MetaSign: Document title cannot be empty");
-        require(signature.length > 0, "MetaSign: Signature cannot be empty");
-        require(!documents[documentHash].exists, "MetaSign: Document already signed");
+        if (documentHash == bytes32(0)) revert EmptyDocumentHash();
+        if (bytes(documentTitle).length == 0) revert EmptyDocumentTitle();
+        if (signature.length == 0) revert EmptySignature();
+        if (documents[documentHash].exists) revert DocumentAlreadySigned();
+        if (nonce != signerNonces[msg.sender]) revert InvalidNonce();
+        
+        // Create the message hash that should have been signed
+        bytes32 messageHash = keccak256(abi.encodePacked(
+            "\x19Ethereum Signed Message:\n32",
+            keccak256(abi.encodePacked(documentHash, documentTitle, nonce, address(this)))
+        ));
+        
+        // Verify the signature
+        address recoveredSigner = messageHash.recover(signature);
+        if (recoveredSigner != msg.sender) revert InvalidSignature();
+        
+        // Increment nonce to prevent replay attacks
+        signerNonces[msg.sender]++;
         
         // Create and store the document record
         documents[documentHash] = DocumentRecord({
@@ -77,7 +113,8 @@ contract MetaSign {
             signer: msg.sender,
             timestamp: block.timestamp,
             documentTitle: documentTitle,
-            signature: signature
+            signature: signature,
+            nonce: nonce
         });
         
         // Add to signer's document list
@@ -89,39 +126,68 @@ contract MetaSign {
             msg.sender,
             documentTitle,
             block.timestamp,
-            signature
+            signature,
+            nonce
         );
     }
     
     /**
-     * @dev Verify a document by retrieving its signing information
+     * @dev Verify a document by retrieving its signing information and validating signature
      * @param documentHash Keccak-256 hash of the document to verify
      * @return exists Whether the document record exists
      * @return signer Address that signed the document
      * @return timestamp When the document was signed
      * @return documentTitle Title of the document
      * @return signature Digital signature of the document hash
+     * @return signatureValid Whether the stored signature is cryptographically valid
      */
     function verifyDocument(bytes32 documentHash)
         external
-        view
         returns (
             bool exists,
             address signer,
             uint256 timestamp,
             string memory documentTitle,
-            bytes memory signature
+            bytes memory signature,
+            bool signatureValid
         )
     {
         DocumentRecord memory record = documents[documentHash];
+        
+        bool sigValid = false;
+        
+        if (record.exists) {
+            // Recreate the message hash that should have been signed
+            bytes32 messageHash = keccak256(abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encodePacked(documentHash, record.documentTitle, record.nonce, address(this)))
+            ));
+            
+            // Verify the signature
+            address recoveredSigner = messageHash.recover(record.signature);
+            sigValid = (recoveredSigner == record.signer);
+        }
+        
+        // Emit verification event
+        emit DocumentVerified(documentHash, msg.sender, record.exists, sigValid);
         
         return (
             record.exists,
             record.signer,
             record.timestamp,
             record.documentTitle,
-            record.signature
+            record.signature,
+            sigValid
         );
+    }
+    
+    /**
+     * @dev Get the current nonce for a signer (needed for signature creation)
+     * @param signer Address to query nonce for
+     * @return Current nonce value
+     */
+    function getSignerNonce(address signer) external view returns (uint256) {
+        return signerNonces[signer];
     }
     
     /**
@@ -170,6 +236,7 @@ contract MetaSign {
      * @return signer Address that signed the document
      * @return timestamp When it was signed
      * @return documentTitle Title of the document
+     * @return nonce Nonce used for the signature
      */
     function getDocumentInfo(bytes32 documentHash)
         external
@@ -178,7 +245,8 @@ contract MetaSign {
             bool exists,
             address signer,
             uint256 timestamp,
-            string memory documentTitle
+            string memory documentTitle,
+            uint256 nonce
         )
     {
         DocumentRecord memory record = documents[documentHash];
@@ -187,13 +255,15 @@ contract MetaSign {
             record.exists,
             record.signer,
             record.timestamp,
-            record.documentTitle
+            record.documentTitle,
+            record.nonce
         );
     }
     
     /**
      * @dev Emergency function to verify contract deployment
-     * @return Contract name and version
+     * @return name Contract name
+     * @return version Contract version
      */
     function getContractInfo()
         external
