@@ -128,10 +128,10 @@ function App() {
 
       // Check network
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      const targetChainId = import.meta.env.VITE_CHAIN_ID || '0x4268';
-      const targetChainName = import.meta.env.VITE_CHAIN_NAME || 'Holesky';
-      const targetRpcUrl = import.meta.env.VITE_RPC_URL || 'https://ethereum-holesky.publicnode.com';
-      const targetExplorerUrl = import.meta.env.VITE_EXPLORER_URL || 'https://holesky.etherscan.io';
+      const targetChainId = import.meta.env.VITE_CHAIN_ID || '0x4c614e';
+      const targetChainName = import.meta.env.VITE_CHAIN_NAME || 'Hoodi Testnet';
+      const targetRpcUrl = import.meta.env.VITE_RPC_URL || 'https://rpc.hoodi.io';
+      const targetExplorerUrl = import.meta.env.VITE_EXPLORER_URL || 'https://explorer.hoodi.io';
       
       if (chainId !== targetChainId) {
         try {
@@ -148,7 +148,7 @@ function App() {
                 chainName: targetChainName,
                 rpcUrls: [targetRpcUrl],
                 nativeCurrency: {
-                  name: 'Holesky Ether',
+                  name: 'Hoodi Ether',
                   symbol: 'ETH',
                   decimals: 18
                 },

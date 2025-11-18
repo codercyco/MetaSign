@@ -26,10 +26,10 @@ This guide explains how to configure environment variables for the MetaSign dApp
 
 | Variable | Description | Example | Default |
 |----------|-------------|---------|---------|
-| `VITE_CHAIN_ID` | Target blockchain chain ID (hex format) | `0x4268` | `0x4268` (Holesky) |
-| `VITE_CHAIN_NAME` | Human-readable network name | `Ethereum Mainnet` | `Holesky` |
-| `VITE_RPC_URL` | RPC endpoint for blockchain connection | `https://mainnet.infura.io/v3/YOUR_KEY` | Holesky public node |
-| `VITE_EXPLORER_URL` | Block explorer base URL | `https://etherscan.io` | `https://holesky.etherscan.io` |
+| `VITE_CHAIN_ID` | Target blockchain chain ID (hex format) | `0x4c614e` | `0x4c614e` (Hoodi) |
+| `VITE_CHAIN_NAME` | Human-readable network name | `Ethereum Mainnet` | `Hoodi Testnet` |
+| `VITE_RPC_URL` | RPC endpoint for blockchain connection | `https://mainnet.infura.io/v3/YOUR_KEY` | Hoodi public node |
+| `VITE_EXPLORER_URL` | Block explorer base URL | `https://etherscan.io` | `https://explorer.hoodi.io` |
 
 ### 🚀 Development Settings
 
@@ -45,6 +45,14 @@ VITE_CHAIN_ID=0x1
 VITE_CHAIN_NAME=Ethereum Mainnet
 VITE_RPC_URL=https://mainnet.infura.io/v3/YOUR_INFURA_KEY
 VITE_EXPLORER_URL=https://etherscan.io
+```
+
+### Hoodi Testnet (Default)
+```env
+VITE_CHAIN_ID=0x4c614e
+VITE_CHAIN_NAME=Hoodi Testnet
+VITE_RPC_URL=https://rpc.hoodi.io
+VITE_EXPLORER_URL=https://explorer.hoodi.io
 ```
 
 ### Ethereum Sepolia Testnet
