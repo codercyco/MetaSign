@@ -143,6 +143,7 @@ contract MetaSign {
      */
     function verifyDocument(bytes32 documentHash)
         external
+        view
         returns (
             bool exists,
             address signer,
@@ -168,9 +169,6 @@ contract MetaSign {
             sigValid = (recoveredSigner == record.signer);
         }
         
-        // Emit verification event
-        emit DocumentVerified(documentHash, msg.sender, record.exists, sigValid);
-        
         return (
             record.exists,
             record.signer,
@@ -179,6 +177,26 @@ contract MetaSign {
             record.signature,
             sigValid
         );
+    }
+    
+    /**
+     * @dev Log verification attempt (separate function for event emission)
+     * @param documentHash Hash of the document being verified
+     */
+    function logVerification(bytes32 documentHash) external {
+        DocumentRecord memory record = documents[documentHash];
+        
+        bool sigValid = false;
+        if (record.exists) {
+            bytes32 messageHash = keccak256(abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encodePacked(documentHash, record.documentTitle, record.nonce, address(this)))
+            ));
+            address recoveredSigner = messageHash.recover(record.signature);
+            sigValid = (recoveredSigner == record.signer);
+        }
+        
+        emit DocumentVerified(documentHash, msg.sender, record.exists, sigValid);
     }
     
     /**

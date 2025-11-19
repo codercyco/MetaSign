@@ -29,6 +29,15 @@ const contractABI = [
       {"internalType": "bytes", "name": "signature", "type": "bytes"},
       {"internalType": "bool", "name": "signatureValid", "type": "bool"}
     ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "bytes32", "name": "documentHash", "type": "bytes32"}
+    ],
+    "name": "logVerification",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -341,6 +350,18 @@ function App() {
 
       const result = await contract.verifyDocument(hashToVerify);
       
+      // Optionally log verification event if wallet is connected
+      if (walletConnected && provider) {
+        try {
+          const signer = await provider.getSigner();
+          const contractWithSigner = contract.connect(signer);
+          await contractWithSigner.logVerification(hashToVerify);
+        } catch (logError) {
+          console.log('Could not log verification event:', logError.message);
+          // Don't fail verification if logging fails
+        }
+      }
+      
       if (result.exists) {
         const timestamp = new Date(Number(result.timestamp) * 1000);
         setVerifyResult({
@@ -540,7 +561,7 @@ function App() {
 
           {signResult && (
             <div className="mt-4 bg-[#E9FCFF] dark:bg-gray-800 border border-[#85D1DB]/60 dark:border-gray-600 rounded-lg p-4 text-sm font-mono break-all max-h-96 overflow-y-auto">
-              <strong className="text-green-600">✅ Document signed successfully!</strong><br />
+              <strong className="text-green-600">Document signed successfully!</strong><br />
               <strong>File Name:</strong> {signResult.fileName}<br />
               <strong>Document Hash:</strong> {signResult.hash}<br />
               <strong>Digital Signature:</strong> <span className="text-xs break-all">{signResult.signature}</span><br />
@@ -634,12 +655,12 @@ function App() {
               {verifyResult.valid ? (
                 verifyResult.signatureValid ? (
                   <>
-                    ✅ Document is VALID & CRYPTOGRAPHICALLY SECURE<br />
+                    Document is VALID & CRYPTOGRAPHICALLY SECURE<br />
                     <div className="text-left mt-2 text-sm">
                       <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
                       <strong>Signer:</strong> {verifyResult.signer}<br />
                       <strong>Signed at:</strong> {verifyResult.timestamp}<br />
-                      <strong>Signature Status:</strong> <span className="text-green-600 dark:text-green-400">✅ Cryptographically Valid</span><br />
+                      <strong>Signature Status:</strong> <span className="text-green-600 dark:text-green-400">Cryptographically Valid</span><br />
                       <strong>Digital Signature:</strong> <span className="text-xs break-all">{verifyResult.signature}</span><br />
                       <strong>Document Hash:</strong> {verifyResult.hash}
                       {!verifyResult.matchesSigner && (
