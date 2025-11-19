@@ -116,15 +116,27 @@ function App() {
 
   // Initialize contract
   useEffect(() => {
-    if (typeof window.ethereum !== 'undefined') {
-      const web3Provider = new ethers.BrowserProvider(window.ethereum);
-      setProvider(web3Provider);
-      
-      if (CONTRACT_ADDRESS) {
-        const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, contractABI, web3Provider);
-        setContract(contractInstance);
+    const initializeContract = async () => {
+      try {
+        // Check if MetaMask is available
+        if (typeof window.ethereum !== 'undefined') {
+          // Create provider without connecting
+          const web3Provider = new ethers.BrowserProvider(window.ethereum);
+          setProvider(web3Provider);
+          
+          if (CONTRACT_ADDRESS) {
+            const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, contractABI, web3Provider);
+            setContract(contractInstance);
+          }
+        } else {
+          console.warn('No Ethereum wallet detected');
+        }
+      } catch (error) {
+        console.error('Contract initialization error:', error);
       }
-    }
+    };
+    
+    initializeContract();
   }, []);
 
   // Toggle theme
@@ -331,11 +343,25 @@ function App() {
 
   // Verify document
   const verifyDocument = async () => {
+    // Re-initialize contract if not available
+    if (!contract && CONTRACT_ADDRESS) {
+      try {
+        if (typeof window.ethereum !== 'undefined') {
+          const web3Provider = new ethers.BrowserProvider(window.ethereum);
+          const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, contractABI, web3Provider);
+          setContract(contractInstance);
+          setProvider(web3Provider);
+        }
+      } catch (initError) {
+        console.error('Contract re-initialization failed:', initError);
+      }
+    }
+
     if (!contract) {
       alert(
         !CONTRACT_ADDRESS
           ? 'Smart contract address is not configured. Please set VITE_CONTRACT_ADDRESS in your environment variables.'
-          : 'Contract not initialized. Please reload the dApp and try again.'
+          : 'Contract initialization failed. Please check your network connection and try again.'
       );
       return;
     }
@@ -354,7 +380,13 @@ function App() {
       setVerifyLoading(true);
       setVerifyResult(null);
 
-      const result = await contract.verifyDocument(hashToVerify);
+      // Add timeout and better error handling
+      const result = await Promise.race([
+        contract.verifyDocument(hashToVerify),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 30000)
+        )
+      ]);
       
       if (result.exists) {
         const timestamp = new Date(Number(result.timestamp) * 1000);
@@ -376,7 +408,20 @@ function App() {
       }
     } catch (error) {
       console.error('Verification failed:', error);
-      alert('Document verification failed: ' + error.message);
+      
+      let errorMessage = 'Document verification failed';
+      
+      if (error.message.includes('could not decode result data')) {
+        errorMessage = 'Network error: Unable to decode contract response. Please check your network connection and try again.';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout: Please check your network connection and try again.';
+      } else if (error.code === 'NETWORK_ERROR') {
+        errorMessage = 'Network error: Please check your internet connection and try again.';
+      } else {
+        errorMessage += ': ' + error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setVerifyLoading(false);
     }
@@ -422,18 +467,31 @@ function App() {
     }
   };
 
-  // Listen to account changes
+  // Listen to account changes and prevent phantom wallet interference
   useEffect(() => {
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        setUserAccount(accounts[0]);
-        setWalletConnected(!!accounts[0]);
-      });
+      // Check if this is MetaMask specifically to avoid phantom wallet interference
+      const isMetaMask = window.ethereum.isMetaMask;
+      
+      if (isMetaMask) {
+        window.ethereum.on('accountsChanged', (accounts) => {
+          setUserAccount(accounts[0]);
+          setWalletConnected(!!accounts[0]);
+        });
 
-      window.ethereum.on('chainChanged', () => {
-        window.location.reload();
-      });
+        window.ethereum.on('chainChanged', () => {
+          window.location.reload();
+        });
+      }
     }
+    
+    // Cleanup function
+    return () => {
+      if (window.ethereum && window.ethereum.isMetaMask) {
+        window.ethereum.removeAllListeners('accountsChanged');
+        window.ethereum.removeAllListeners('chainChanged');
+      }
+    };
   }, []);
 
   return (
