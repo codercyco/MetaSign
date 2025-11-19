@@ -159,12 +159,18 @@ function App() {
       setUserAccount(accounts[0]);
       setWalletConnected(true);
 
-      // Check network
+      // Check network configuration
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      const targetChainId = import.meta.env.VITE_CHAIN_ID || '0x4c614e';
-      const targetChainName = import.meta.env.VITE_CHAIN_NAME || 'Hoodi Testnet';
-      const targetRpcUrl = import.meta.env.VITE_RPC_URL || 'https://rpc.hoodi.io';
-      const targetExplorerUrl = import.meta.env.VITE_EXPLORER_URL || 'https://explorer.hoodi.io';
+      const targetChainId = import.meta.env.VITE_CHAIN_ID;
+      const targetChainName = import.meta.env.VITE_CHAIN_NAME;
+      const targetRpcUrl = import.meta.env.VITE_RPC_URL;
+      const targetExplorerUrl = import.meta.env.VITE_EXPLORER_URL;
+      
+      // Validate required environment variables
+      if (!targetChainId || !targetChainName || !targetRpcUrl) {
+        console.warn('Network configuration incomplete. Some features may not work properly.');
+        return;
+      }
       
       if (chainId !== targetChainId) {
         try {
@@ -440,7 +446,7 @@ function App() {
             onClick={toggleTheme}
             className="absolute top-0 right-0 w-12 h-12 bg-[#B3EBF2] dark:bg-gray-700 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 hover:rotate-12 transition-all duration-300 shadow-lg border-2 border-[#85D1DB]/60 dark:border-gray-600"
           >
-            <span className="text-2xl">{darkMode ? '☀️' : '🌙'}</span>
+            <span className="text-2xl">{darkMode ? '🌙' : '☀️'}</span>
           </button>
           
           <h1 className="text-5xl md:text-6xl title-font font-extrabold mb-3 bg-gradient-to-l from-[#4edbed] via-[#87ecb4] to-[#92e6d4] bg-clip-text text-transparent">
@@ -471,11 +477,6 @@ function App() {
           <strong className="text-[#2F7A87] dark:text-blue-300">Smart Contract:</strong>{' '}
           <span className="text-[#1F4850] dark:text-gray-300">
             {CONTRACT_ADDRESS || '⚠️ Not configured'}
-          </span>
-          <br />
-          <strong className="text-[#2F7A87] dark:text-blue-300">Network:</strong>{' '}
-          <span className="text-[#1F4850] dark:text-gray-300">
-            {import.meta.env.VITE_CHAIN_NAME || 'Holesky'} Testnet (Chain ID: {parseInt(import.meta.env.VITE_CHAIN_ID || '0x4268', 16)})
           </span>
         </div>
 
