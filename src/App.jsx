@@ -350,18 +350,6 @@ function App() {
 
       const result = await contract.verifyDocument(hashToVerify);
       
-      // Optionally log verification event if wallet is connected
-      if (walletConnected && provider) {
-        try {
-          const signer = await provider.getSigner();
-          const contractWithSigner = contract.connect(signer);
-          await contractWithSigner.logVerification(hashToVerify);
-        } catch (logError) {
-          console.log('Could not log verification event:', logError.message);
-          // Don't fail verification if logging fails
-        }
-      }
-      
       if (result.exists) {
         const timestamp = new Date(Number(result.timestamp) * 1000);
         setVerifyResult({
