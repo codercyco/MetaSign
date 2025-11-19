@@ -550,12 +550,12 @@ function App() {
           {signResult && (
             <div className="mt-4 bg-[#E9FCFF] dark:bg-gray-800 border border-[#85D1DB]/60 dark:border-gray-600 rounded-lg p-4 text-sm font-mono break-all max-h-96 overflow-y-auto">
               <strong className="text-green-600">Document signed successfully!</strong><br />
-              <strong>File Name:</strong> {signResult.fileName}<br />
-              <strong>Document Hash:</strong> {signResult.hash}<br />
-              <strong>Digital Signature:</strong> <span className="text-xs break-all">{signResult.signature}</span><br />
-              <strong>Signer:</strong> {signResult.signer}<br />
-              <strong>Nonce:</strong> {signResult.nonce}<br />
-              <strong>Transaction:</strong>{' '}
+              <strong className="text-black dark:text-gray-200">File Name:</strong> <span className="text-black dark:text-gray-300">{signResult.fileName}</span><br />
+              <strong className="text-black dark:text-gray-200">Document Hash:</strong> <span className="text-black dark:text-gray-300">{signResult.hash}</span><br />
+              <strong className="text-black dark:text-gray-200">Digital Signature:</strong> <span className="text-xs break-all text-black dark:text-gray-300">{signResult.signature}</span><br />
+              <strong className="text-black dark:text-gray-200">Signer:</strong> <span className="text-black dark:text-gray-300">{signResult.signer}</span><br />
+              <strong className="text-black dark:text-gray-200">Nonce:</strong> <span className="text-black dark:text-gray-300">{signResult.nonce}</span><br />
+              <strong className="text-black dark:text-gray-200">Transaction:</strong>{' '}
               <a 
                 href={`${import.meta.env.VITE_EXPLORER_URL || 'https://explorer.hoodi.io'}/tx/${signResult.txHash}`}
                 target="_blank"
@@ -564,7 +564,7 @@ function App() {
               >
                 {signResult.txHash}
               </a><br />
-              <strong>Block:</strong> {signResult.blockNumber}
+              <strong className="text-black dark:text-gray-200">Block:</strong> <span className="text-black dark:text-gray-300">{signResult.blockNumber}</span>
             </div>
           )}
         </div>
@@ -702,10 +702,10 @@ function App() {
                 {historyData.map((doc, index) => (
                   <div key={index} className="bg-white/80 dark:bg-gray-700 p-3 rounded-lg border border-[#85D1DB]/50 dark:border-gray-600">
                     <strong className="text-[#1F4850] dark:text-gray-200">Document {index + 1}:</strong><br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Title:</strong> {doc.title}<br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Hash:</strong> <span className="font-mono text-xs">{doc.hash}</span><br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Signature:</strong> <span className="font-mono text-xs break-all">{doc.signature}</span><br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Signed:</strong> {doc.timestamp}
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Title:</strong> <span className="text-black dark:text-gray-300">{doc.title}</span><br />
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Hash:</strong> <span className="font-mono text-xs text-black dark:text-gray-300">{doc.hash}</span><br />
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Signature:</strong> <span className="font-mono text-xs break-all text-black dark:text-gray-300">{doc.signature}</span><br />
+                    <strong className="text-[#2F7A87] dark:text-gray-400">Signed:</strong> <span className="text-black dark:text-gray-300">{doc.timestamp}</span>
                   </div>
                 ))}
               </div>
