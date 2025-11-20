@@ -3,7 +3,7 @@
 **A secure Web3 dApp for cryptographically signing and verifying documents on the blockchain**
 
 ![MetaSign](https://img.shields.io/badge/Built%20with-React%20%2B%20Solidity-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+![License](https://img.shields.io/badge/License-GPLv3-blue)
 ![Security](https://img.shields.io/badge/Security-Production%20Ready-brightgreen)
 
 ## Features
@@ -169,7 +169,9 @@ We welcome contributions! Please follow these steps:
 
 ## License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **GNU General Public License v3.0**.
+
+See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
@@ -188,6 +190,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 <div align="center">
 
-[🌐 Live Demo](https://metasign.vercel.app) • [📚 Documentation](https://github.com/codercyco/MetaSign/wiki) • [🐛 Report Bug](https://github.com/codercyco/MetaSign/issues)
+[🌐 Live Demo](https://meta-sign.vercel.app) • [📚 Documentation](https://github.com/codercyco/MetaSign/wiki) • [🐛 Report Bug](https://github.com/codercyco/MetaSign/issues)
 
 </div>
