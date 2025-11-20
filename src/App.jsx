@@ -387,7 +387,7 @@ function App() {
           valid: false,
           signatureValid: false,
           error: true,
-          errorMessage: `Invalid document hash format. Hash must be exactly 64 characters long (got ${cleanHash.length} characters).`
+          errorMessage: `Invalid document hash format. Hash must be exactly 64 characters long.`
         });
         return;
       }
@@ -554,9 +554,12 @@ function App() {
             <span className="text-2xl">{darkMode ? '🌙' : '☀️'}</span>
           </button>
           
-          <h1 className="text-5xl md:text-6xl title-font font-extrabold mb-3 bg-gradient-to-l from-[#4edbed] via-[#87ecb4] to-[#92e6d4] bg-clip-text text-transparent">
-            MetaSign
-          </h1>
+          <div className="flex justify-center items-center">
+            <img src="/logo.svg" alt="MetaSign Logo" className="h-16 w-16 mr-4"/>
+            <h1 className="text-5xl md:text-6xl title-font font-extrabold bg-gradient-to-l from-[#4edbed] via-[#87ecb4] to-[#92e6d4] bg-clip-text text-transparent">
+              MetaSign
+            </h1>
+          </div>
           <p className="text-[#1F4850] dark:text-gray-400 text-lg">
             <>
               <span className="block text-2xl">Sign Once, Trust Forever</span>
@@ -753,7 +756,6 @@ function App() {
                   <div className="text-left mt-2 text-sm">
                     <strong>Error:</strong> {verifyResult.errorMessage}
                     <div className="mt-2 text-red-700 dark:text-red-400">
-                      💡 <strong>Tip:</strong> Document hash should be exactly 64 hexadecimal characters (0-9, a-f, A-F)<br />
                       Example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
                     </div>
                   </div>
