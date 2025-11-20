@@ -781,7 +781,6 @@ function App() {
               {signResult.success ? (
                 <>
                   <div className="flex items-center justify-center mb-4">
-                    <span className="text-3xl mr-2">✅</span>
                     <h3 className="text-xl font-bold text-green-800 dark:text-green-300">
                       Document Signed Successfully!
                     </h3>
@@ -791,17 +790,17 @@ function App() {
                     <div className="grid grid-cols-1 gap-3">
                       
                       <div className="flex flex-col">
-                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">📄 Document:</span>
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Document:</span>
                         <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.fileName}</span>
                       </div>
                       
                       <div className="flex flex-col">
-                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">👤 Signer:</span>
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Signer:</span>
                         <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs">{signResult.signer}</span>
                       </div>
                       
                       <div className="flex flex-col">
-                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">🔗 Transaction:</span>
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Transaction:</span>
                         <a
                           href={`${import.meta.env.VITE_EXPLORER_URL}/tx/${signResult.txHash}`}
                           target="_blank"
@@ -813,23 +812,19 @@ function App() {
                       </div>
                       
                       <div className="flex flex-col">
-                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">📋 Document Hash:</span>
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Document Hash:</span>
                         <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.hash}</span>
                       </div>
                       
                       <div className="flex flex-col">
-                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">✍️ Digital Signature:</span>
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Digital Signature:</span>
                         <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.signature}</span>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">🧱 Block:</span>
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Block:</span>
                           <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.blockNumber}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">🔢 Nonce:</span>
-                          <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.nonce}</span>
                         </div>
                       </div>
                       
