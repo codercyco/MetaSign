@@ -632,9 +632,9 @@ function App() {
                 className="hidden"
                 id="fileInput"
               />
-              <label htmlFor="fileInput" className="cursor-pointer text-[#1F4850] dark:text-gray-300 block">
+              <div className="cursor-pointer text-[#1F4850] dark:text-gray-300">
                 📄 Click to upload or drag and drop a file
-              </label>
+              </div>
             </div>
             
             {currentFileName && (
@@ -701,9 +701,9 @@ function App() {
                 className="hidden"
                 id="verifyFileInput"
               />
-              <label htmlFor="verifyFileInput" className="cursor-pointer text-[#1F4850] dark:text-gray-300 block">
+              <div className="cursor-pointer text-[#1F4850] dark:text-gray-300">
                 📄 Click to upload or drag and drop a file
-              </label>
+              </div>
             </div>
           </div>
 
