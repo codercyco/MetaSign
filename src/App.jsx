@@ -140,6 +140,17 @@ function App() {
   }, []);
 
   // Toggle theme
+  // Helper function to format timestamp in UTC
+  const formatUTCTimestamp = (timestampSeconds) => {
+    const date = new Date(Number(timestampSeconds) * 1000);
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
+  };
+
   const toggleTheme = () => {
     setDarkMode(!darkMode);
     document.body.classList.toggle('dark');
@@ -429,15 +440,74 @@ function App() {
       ]);
       
       if (result.exists) {
+        // Get the transaction hash for the signing event
+        let signTransactionHash = null;
+        try {
+          console.log('Searching for DocumentSigned event...', {
+            documentHash: hashToVerify,
+            signer: result.signer
+          });
+          
+          // Create event filter manually using the event signature
+          const eventSignature = "DocumentSigned(bytes32,address,string,uint256,bytes,uint256)";
+          const eventTopic = ethers.id(eventSignature);
+          
+          // Create filter for DocumentSigned events
+          const filter = {
+            address: CONTRACT_ADDRESS,
+            topics: [
+              eventTopic, // Event signature
+              hashToVerify, // First indexed parameter (documentHash)
+              ethers.zeroPadValue(result.signer, 32) // Second indexed parameter (signer)
+            ],
+            fromBlock: 0,
+            toBlock: 'latest'
+          };
+          
+          console.log('Event filter created:', filter);
+          
+          const logs = await provider.getLogs(filter);
+          console.log('Raw logs found:', logs);
+          
+          if (logs.length > 0) {
+            signTransactionHash = logs[0].transactionHash;
+            console.log('Transaction hash found:', signTransactionHash);
+          } else {
+            console.warn('No events found for this document');
+            
+            // Try with just the document hash (in case signer encoding is wrong)
+            const filterByHashOnly = {
+              address: CONTRACT_ADDRESS,
+              topics: [
+                eventTopic, // Event signature
+                hashToVerify // Only document hash
+              ],
+              fromBlock: 0,
+              toBlock: 'latest'
+            };
+            
+            const logsByHash = await provider.getLogs(filterByHashOnly);
+            console.log('Logs found by hash only:', logsByHash);
+            
+            if (logsByHash.length > 0) {
+              signTransactionHash = logsByHash[0].transactionHash;
+              console.log('Transaction hash found by hash:', signTransactionHash);
+            }
+          }
+        } catch (eventError) {
+          console.error('Error fetching signing transaction:', eventError);
+        }
+
         const timestamp = new Date(Number(result.timestamp) * 1000);
         setVerifyResult({
           valid: result.exists,
           signatureValid: result.signatureValid, // New cryptographic validation
           documentTitle: result.documentTitle,
           signer: result.signer,
-          timestamp: timestamp.toLocaleString(),
+          timestamp: formatUTCTimestamp(result.timestamp),
           signature: result.signature,
           hash: hashToVerify,
+          signTransactionHash: signTransactionHash,
           matchesSigner: !signerAddress || result.signer.toLowerCase() === signerAddress.toLowerCase()
         });
       } else {
@@ -499,7 +569,7 @@ function App() {
         return {
           hash,
           title: details.documentTitle,
-          timestamp: new Date(Number(details.timestamp) * 1000).toLocaleString(),
+          timestamp: formatUTCTimestamp(details.timestamp),
           signature: details.signature
         };
       });
@@ -657,22 +727,57 @@ function App() {
           </button>
 
           {signResult && (
-            <div className="mt-4 bg-[#E9FCFF] dark:bg-gray-800 border border-[#85D1DB]/60 dark:border-gray-600 rounded-lg p-4 text-sm font-mono break-all max-h-96 overflow-y-auto">
-              <strong className="text-green-600">Document signed successfully!</strong><br />
-              <strong className="text-black dark:text-gray-200">File Name:</strong> <span className="text-black dark:text-gray-300">{signResult.fileName}</span><br />
-              <strong className="text-black dark:text-gray-200">Document Hash:</strong> <span className="text-black dark:text-gray-300">{signResult.hash}</span><br />
-              <strong className="text-black dark:text-gray-200">Digital Signature:</strong> <span className="text-xs break-all text-black dark:text-gray-300">{signResult.signature}</span><br />
-              <strong className="text-black dark:text-gray-200">Signer:</strong> <span className="text-black dark:text-gray-300">{signResult.signer}</span><br />
-              <strong className="text-black dark:text-gray-200">Transaction:</strong>{' '}
-              <a 
-                href={`${import.meta.env.VITE_EXPLORER_URL}/tx/${signResult.txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
-              >
-                {signResult.txHash}
-              </a><br />
-              <strong className="text-black dark:text-gray-200">Block:</strong> <span className="text-black dark:text-gray-300">{signResult.blockNumber}</span>
+            <div className="mt-6 p-6 rounded-xl shadow-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-800">
+              <div className="flex items-center justify-center mb-4">
+                <h3 className="text-xl font-bold text-green-800 dark:text-green-300">
+                  Document Signed Successfully!
+                </h3>
+              </div>
+              
+              <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 space-y-3 text-sm">
+                <div className="grid grid-cols-1 gap-3">
+                  
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Document:</span>
+                    <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.fileName}</span>
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Signer:</span>
+                    <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs">{signResult.signer}</span>
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Transaction:</span>
+                    <a
+                      href={`${import.meta.env.VITE_EXPLORER_URL}/tx/${signResult.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline pl-4 font-mono text-xs break-all"
+                    >
+                      {signResult.txHash}
+                    </a>
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Document Hash:</span>
+                    <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.hash}</span>
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Digital Signature:</span>
+                    <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.signature}</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Block:</span>
+                      <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.blockNumber}</span>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -741,62 +846,188 @@ function App() {
           </button>
 
           {verifyResult && (
-            <div className={`mt-4 p-4 rounded-lg text-center font-bold ${
+            <div className={`mt-6 p-6 rounded-xl shadow-lg ${
               verifyResult.error
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800'
+                ? 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-200 dark:border-red-800'
                 : verifyResult.valid && verifyResult.signatureValid
-                ? 'bg-[#C9FDF2] dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-[#85D1DB]/50 dark:border-green-800'
+                ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-800'
                 : verifyResult.valid && !verifyResult.signatureValid
-                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-800'
-                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800'
+                ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-200 dark:border-yellow-800'
+                : 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-200 dark:border-red-800'
             }`}>
               {verifyResult.error ? (
                 <>
-                  ❌ INVALID DOCUMENT HASH<br />
-                  <div className="text-left mt-2 text-sm">
-                    <strong>Error:</strong> {verifyResult.errorMessage}
-                    <div className="mt-2 text-red-700 dark:text-red-400">
-                      Example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+                  <div className="flex items-center justify-center mb-4">
+                    <span className="text-3xl mr-2">❌</span>
+                    <h3 className="text-xl font-bold text-red-800 dark:text-red-300">
+                      Invalid Document Hash
+                    </h3>
+                  </div>
+                  
+                  <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 text-sm">
+                    <div className="space-y-3">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-red-700 dark:text-red-400 mb-1">🚫 Error:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4">{verifyResult.errorMessage}</span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-red-700 dark:text-red-400 mb-1">💡 Example Format:</span>
+                        <span className="text-gray-600 dark:text-gray-400 pl-4 font-mono text-xs break-all">
+                          0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </>
               ) : verifyResult.valid ? (
                 verifyResult.signatureValid ? (
                   <>
-                    ✅ Document is VALID & CRYPTOGRAPHICALLY SECURE<br />
-                    <div className="text-left mt-2 text-sm">
-                      <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
-                      <strong>Signer:</strong> {verifyResult.signer}<br />
-                      <strong>Signed at:</strong> {verifyResult.timestamp}<br />
-                      <strong>Signature Status:</strong> <span className="text-green-600 dark:text-green-400">✅ Cryptographically Valid</span><br />
-                      <strong>Digital Signature:</strong> <span className="text-xs break-all">{verifyResult.signature}</span><br />
-                      <strong>Document Hash:</strong> {verifyResult.hash}
-                      {!verifyResult.matchesSigner && (
-                        <div className="mt-2 text-yellow-700 dark:text-yellow-400">
-                          ⚠️ WARNING: Signer address does not match provided address
+                    <div className="flex items-center justify-center mb-4">
+                      <h3 className="text-xl font-bold text-green-800 dark:text-green-300">
+                        Document is Valid & Cryptographically Secure
+                      </h3>
+                    </div>
+                    
+                    <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 space-y-3 text-sm">
+                      <div className="grid grid-cols-1 gap-3">
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Document:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4">{verifyResult.documentTitle}</span>
                         </div>
-                      )}
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Signer:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs">{verifyResult.signer}</span>
+                        </div>
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Signed At:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4">{verifyResult.timestamp}</span>
+                        </div>
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Signature Status:</span>
+                          <span className="text-green-600 dark:text-green-400 pl-4 font-medium">✅ Cryptographically Valid</span>
+                        </div>
+                        
+                        {verifyResult.signTransactionHash && (
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Sign Transaction:</span>
+                            <a
+                              href={`${import.meta.env.VITE_EXPLORER_URL || 'https://explorer.hoodi.io'}/tx/${verifyResult.signTransactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline pl-4 font-mono text-xs break-all"
+                            >
+                              {verifyResult.signTransactionHash}
+                            </a>
+                          </div>
+                        )}
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Document Hash:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{verifyResult.hash}</span>
+                        </div>
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Digital Signature:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{verifyResult.signature}</span>
+                        </div>
+                        
+                        {!verifyResult.matchesSigner && (
+                          <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-800 rounded-lg p-3">
+                            <div className="flex items-center">
+                              <span className="text-2xl mr-2">⚠️</span>
+                              <span className="text-yellow-800 dark:text-yellow-300 font-medium">
+                                Signer address does not match provided address
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        
+                      </div>
                     </div>
                   </>
                 ) : (
                   <>
-                    ⚠️ Document EXISTS but SIGNATURE IS INVALID<br />
-                    <div className="text-left mt-2 text-sm">
-                      <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
-                      <strong>Signer:</strong> {verifyResult.signer}<br />
-                      <strong>Signed at:</strong> {verifyResult.timestamp}<br />
-                      <strong>Signature Status:</strong> <span className="text-red-600 dark:text-red-400">❌ Cryptographically Invalid</span><br />
-                      <strong>Document Hash:</strong> {verifyResult.hash}<br />
-                      <div className="mt-2 text-red-700 dark:text-red-400">
-                        🚨 WARNING: This document's signature cannot be verified. It may have been tampered with.
+                    <div className="flex items-center justify-center mb-4">
+                      <span className="text-3xl mr-2">⚠️</span>
+                      <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-300">
+                        Document Exists but Signature is Invalid
+                      </h3>
+                    </div>
+                    
+                    <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 space-y-3 text-sm">
+                      <div className="grid grid-cols-1 gap-3">
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">📄 Document:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4">{verifyResult.documentTitle}</span>
+                        </div>
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">👤 Signer:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs">{verifyResult.signer}</span>
+                        </div>
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">⏰ Signed At:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4">{verifyResult.timestamp}</span>
+                        </div>
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">🔐 Signature Status:</span>
+                          <span className="text-red-600 dark:text-red-400 pl-4 font-medium">❌ Cryptographically Invalid</span>
+                        </div>
+                        
+                        {verifyResult.signTransactionHash && (
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">🔗 Sign Transaction:</span>
+                            <a
+                              href={`${import.meta.env.VITE_EXPLORER_URL || 'https://explorer.hoodi.io'}/tx/${verifyResult.signTransactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline pl-4 font-mono text-xs break-all"
+                            >
+                              {verifyResult.signTransactionHash}
+                            </a>
+                          </div>
+                        )}
+                        
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">📋 Document Hash:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{verifyResult.hash}</span>
+                        </div>
+                        
+                        <div className="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <span className="text-2xl mr-2">🚨</span>
+                            <span className="text-red-800 dark:text-red-300 font-medium">
+                              WARNING: This document's signature cannot be verified. It may have been tampered with.
+                            </span>
+                          </div>
+                        </div>
+                        
                       </div>
                     </div>
                   </>
                 )
               ) : (
                 <>
-                  ❌ Document is INVALID or NOT FOUND<br />
-                  <span className="text-sm">This document has not been signed on the blockchain.</span>
+                  <div className="flex items-center justify-center mb-4">
+                    <span className="text-3xl mr-2">❌</span>
+                    <h3 className="text-xl font-bold text-red-800 dark:text-red-300">
+                      Document is Invalid or Not Found
+                    </h3>
+                  </div>
+                  
+                  <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 text-center">
+                    <span className="text-gray-700 dark:text-gray-300">
+                      This document has not been signed on the blockchain.
+                    </span>
+                  </div>
                 </>
               )}
             </div>
