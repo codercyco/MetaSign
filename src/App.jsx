@@ -1081,7 +1081,7 @@ function App() {
                         {!verifyResult.matchesSigner && (
                           <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-800 rounded-lg p-3">
                             <div className="flex items-center">
-                              <span className="text-2xl mr-2">⚠️</span>
+                              <span className="text-red-600 dark:text-red-500 font-extrabold mr-2">Warning</span>
                               <span className="text-yellow-800 dark:text-yellow-300 font-medium">
                                 Signer address does not match provided address
                               </span>
