@@ -4,7 +4,6 @@
 
 ![MetaSign](https://img.shields.io/badge/Built%20with-React%20%2B%20Solidity-blue)
 ![License](https://img.shields.io/badge/License-GPLv3-blue)
-![Security](https://img.shields.io/badge/Security-Production%20Ready-brightgreen)
 
 ## Features
 
@@ -58,11 +57,11 @@ Update your `.env` file with:
 # Smart Contract Address (deploy contract first)
 VITE_CONTRACT_ADDRESS=0xYourContractAddress
 
-# Blockchain Network (Hoodi Testnet by default)
-VITE_CHAIN_ID=0x4c614e
-VITE_CHAIN_NAME=Hoodi Testnet
-VITE_RPC_URL=https://rpc.hoodi.io
-VITE_EXPLORER_URL=https://explorer.hoodi.io
+# Blockchain
+VITE_CHAIN_ID=
+VITE_CHAIN_NAME=
+VITE_RPC_URL=
+VITE_EXPLORER_URL=
 ```
 
 ## Usage Guide
