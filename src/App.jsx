@@ -346,7 +346,51 @@ function App() {
       setCurrentFileName('');
     } catch (error) {
       console.error('Signing failed:', error);
-      alert('Document signing failed: ' + error.message);
+      
+      // Check if this is a DocumentAlreadySigned error
+      if (error.data === '0x38a49dd9' || error.message.includes('DocumentAlreadySigned')) {
+        try {
+          // Get the existing document details
+          const docHash = ethers.keccak256(ethers.toUtf8Bytes(currentFile));
+          const existingDocument = await contract.verifyDocument(docHash);
+          
+          if (existingDocument.exists) {
+            setSignResult({
+              success: false,
+              error: 'ALREADY_SIGNED',
+              fileName: currentFileName || 'Document',
+              hash: docHash,
+              existingDocument: {
+                documentTitle: existingDocument.documentTitle,
+                signer: existingDocument.signer,
+                timestamp: formatUTCTimestamp(existingDocument.timestamp),
+                signature: existingDocument.signature,
+                signatureValid: existingDocument.signatureValid
+              }
+            });
+          } else {
+            setSignResult({
+              success: false,
+              error: 'ALREADY_SIGNED',
+              message: 'This document has already been signed on the blockchain.'
+            });
+          }
+        } catch (verifyError) {
+          console.error('Failed to get existing document details:', verifyError);
+          setSignResult({
+            success: false,
+            error: 'ALREADY_SIGNED',
+            message: 'This document has already been signed on the blockchain, but could not retrieve details.'
+          });
+        }
+      } else {
+        // Other errors
+        setSignResult({
+          success: false,
+          error: 'SIGNING_FAILED',
+          message: error.message
+        });
+      }
     } finally {
       setSignLoading(false);
     }
@@ -727,57 +771,160 @@ function App() {
           </button>
 
           {signResult && (
-            <div className="mt-6 p-6 rounded-xl shadow-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-800">
-              <div className="flex items-center justify-center mb-4">
-                <h3 className="text-xl font-bold text-green-800 dark:text-green-300">
-                  Document Signed Successfully!
-                </h3>
-              </div>
-              
-              <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 space-y-3 text-sm">
-                <div className="grid grid-cols-1 gap-3">
-                  
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Document:</span>
-                    <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.fileName}</span>
+            <div className={`mt-6 p-6 rounded-xl shadow-lg ${
+              signResult.success 
+                ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-800'
+                : signResult.error === 'ALREADY_SIGNED'
+                ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-200 dark:border-yellow-800'
+                : 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-200 dark:border-red-800'
+            }`}>
+              {signResult.success ? (
+                <>
+                  <div className="flex items-center justify-center mb-4">
+                    <span className="text-3xl mr-2">✅</span>
+                    <h3 className="text-xl font-bold text-green-800 dark:text-green-300">
+                      Document Signed Successfully!
+                    </h3>
                   </div>
                   
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Signer:</span>
-                    <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs">{signResult.signer}</span>
-                  </div>
-                  
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Transaction:</span>
-                    <a
-                      href={`${import.meta.env.VITE_EXPLORER_URL}/tx/${signResult.txHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline pl-4 font-mono text-xs break-all"
-                    >
-                      {signResult.txHash}
-                    </a>
-                  </div>
-                  
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Document Hash:</span>
-                    <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.hash}</span>
-                  </div>
-                  
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Digital Signature:</span>
-                    <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.signature}</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-green-700 dark:text-green-400 mb-1">Block:</span>
-                      <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.blockNumber}</span>
+                  <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 space-y-3 text-sm">
+                    <div className="grid grid-cols-1 gap-3">
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">📄 Document:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.fileName}</span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">👤 Signer:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs">{signResult.signer}</span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">🔗 Transaction:</span>
+                        <a
+                          href={`${import.meta.env.VITE_EXPLORER_URL}/tx/${signResult.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 dark:text-blue-400 hover:underline pl-4 font-mono text-xs break-all"
+                        >
+                          {signResult.txHash}
+                        </a>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">📋 Document Hash:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.hash}</span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-green-700 dark:text-green-400 mb-1">✍️ Digital Signature:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.signature}</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">🧱 Block:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.blockNumber}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-green-700 dark:text-green-400 mb-1">🔢 Nonce:</span>
+                          <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.nonce}</span>
+                        </div>
+                      </div>
+                      
                     </div>
                   </div>
+                </>
+              ) : signResult.error === 'ALREADY_SIGNED' ? (
+                <>
+                  <div className="flex items-center justify-center mb-4">
+                    <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-300">
+                      Document Already Signed!
+                    </h3>
+                  </div>
                   
-                </div>
-              </div>
+                  <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 space-y-4 text-sm">
+                    <div className="flex items-center p-3 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-800 rounded-lg">
+                      <span className="text-yellow-800 dark:text-yellow-300 font-medium">
+                        This document has already been signed on the blockchain and cannot be signed again.
+                      </span>
+                    </div>
+                    
+                    {signResult.existingDocument && (
+                      <>
+                        <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                          <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 mb-3">Previous Signing Details:</h4>
+                          
+                          <div className="grid grid-cols-1 gap-3">
+                            
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">Document Title:</span>
+                              <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.existingDocument.documentTitle}</span>
+                            </div>
+                            
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">Signer:</span>
+                              <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs">{signResult.existingDocument.signer}</span>
+                            </div>
+                            
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">Signed At:</span>
+                              <span className="text-gray-700 dark:text-gray-300 pl-4">{signResult.existingDocument.timestamp}</span>
+                            </div>
+                            
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">Signature Status:</span>
+                              <span className={`pl-4 font-medium ${
+                                signResult.existingDocument.signatureValid 
+                                  ? 'text-green-600 dark:text-green-400' 
+                                  : 'text-red-600 dark:text-red-400'
+                              }`}>
+                                {signResult.existingDocument.signatureValid ? '✅ Valid' : '❌ Invalid'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">Document Hash:</span>
+                              <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.hash}</span>
+                            </div>
+                            
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">Digital Signature:</span>
+                              <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{signResult.existingDocument.signature}</span>
+                            </div>
+                            
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    
+                    {signResult.message && !signResult.existingDocument && (
+                      <div className="text-yellow-800 dark:text-yellow-300">
+                        {signResult.message}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center mb-4">
+                    <span className="text-3xl mr-2">❌</span>
+                    <h3 className="text-xl font-bold text-red-800 dark:text-red-300">
+                      Document Signing Failed!
+                    </h3>
+                  </div>
+                  
+                  <div className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 text-sm">
+                    <div className="flex items-center p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded-lg">
+                      <span className="text-2xl mr-2">🚫</span>
+                      <span className="text-red-800 dark:text-red-300 font-medium">
+                        {signResult.message || 'An error occurred while signing the document.'}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
