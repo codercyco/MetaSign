@@ -1194,16 +1194,45 @@ function App() {
           </button>
 
           {historyData.length > 0 && (
-            <div className="mt-4 bg-[#E9FCFF] dark:bg-gray-800 border border-[#85D1DB]/60 dark:border-gray-600 rounded-lg p-4 text-sm max-h-96 overflow-y-auto">
-              <strong className="text-[#1F4850] dark:text-gray-200">Your signed documents ({historyData.length}):</strong>
-              <div className="mt-3 space-y-3">
+            <div className="mt-6 p-6 rounded-xl shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-center mb-4">
+                <h3 className="text-xl font-bold text-blue-800 dark:text-blue-300">
+                  Your Signed Documents ({historyData.length})
+                </h3>
+              </div>
+              
+              <div className="space-y-4 max-h-96 overflow-y-auto">
                 {historyData.map((doc, index) => (
-                  <div key={index} className="bg-white/80 dark:bg-gray-700 p-3 rounded-lg border border-[#85D1DB]/50 dark:border-gray-600">
-                    <strong className="text-[#1F4850] dark:text-gray-200">Document {index + 1}:</strong><br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Title:</strong> <span className="text-black dark:text-gray-300">{doc.title}</span><br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Hash:</strong> <span className="font-mono text-xs text-black dark:text-gray-300">{doc.hash}</span><br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Signature:</strong> <span className="font-mono text-xs break-all text-black dark:text-gray-300">{doc.signature}</span><br />
-                    <strong className="text-[#2F7A87] dark:text-gray-400">Signed:</strong> <span className="text-black dark:text-gray-300">{doc.timestamp}</span>
+                  <div key={index} className="bg-white/50 dark:bg-gray-800/30 rounded-lg p-4 border border-blue-200/50 dark:border-blue-700/50">
+                    <div className="flex items-center mb-3">
+                      <h4 className="font-semibold text-blue-700 dark:text-blue-400">
+                        Document #{index + 1}
+                      </h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-3 text-sm">
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Title:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4">{doc.title}</span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Signed At:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4">{doc.timestamp}</span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Document Hash:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{doc.hash}</span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Digital Signature:</span>
+                        <span className="text-gray-700 dark:text-gray-300 pl-4 font-mono text-xs break-all">{doc.signature}</span>
+                      </div>
+                      
+                    </div>
                   </div>
                 ))}
               </div>
