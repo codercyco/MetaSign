@@ -376,6 +376,46 @@ function App() {
       return;
     }
 
+    // Validate document hash format
+    try {
+      // Remove 0x prefix if present for validation
+      const cleanHash = hashToVerify.startsWith('0x') ? hashToVerify.slice(2) : hashToVerify;
+      
+      // Check if hash is exactly 64 hex characters
+      if (cleanHash.length !== 64) {
+        setVerifyResult({
+          valid: false,
+          signatureValid: false,
+          error: true,
+          errorMessage: `Invalid document hash format. Hash must be exactly 64 characters long (got ${cleanHash.length} characters).`
+        });
+        return;
+      }
+      
+      // Check if hash contains only valid hex characters
+      if (!/^[0-9a-fA-F]{64}$/.test(cleanHash)) {
+        setVerifyResult({
+          valid: false,
+          signatureValid: false,
+          error: true,
+          errorMessage: 'Invalid document hash format. Hash must contain only hexadecimal characters (0-9, a-f, A-F).'
+        });
+        return;
+      }
+      
+      // Ensure hash has 0x prefix
+      hashToVerify = hashToVerify.startsWith('0x') ? hashToVerify : '0x' + hashToVerify;
+      
+    } catch (validateError) {
+      setVerifyResult({
+        valid: false,
+        signatureValid: false,
+        error: true,
+        errorMessage: 'Invalid document hash format. Please check your input and try again.'
+      });
+      return;
+    }
+
     try {
       setVerifyLoading(true);
       setVerifyResult(null);
@@ -417,11 +457,18 @@ function App() {
         errorMessage = 'Request timeout: Please check your network connection and try again.';
       } else if (error.code === 'NETWORK_ERROR') {
         errorMessage = 'Network error: Please check your internet connection and try again.';
+      } else if (error.code === 'INVALID_ARGUMENT' && error.message.includes('invalid BytesLike value')) {
+        errorMessage = 'Invalid document hash format. Please provide a valid 32-byte hexadecimal hash (64 characters).';
       } else {
         errorMessage += ': ' + error.message;
       }
       
-      alert(errorMessage);
+      setVerifyResult({
+        valid: false,
+        signatureValid: false,
+        error: true,
+        errorMessage: errorMessage
+      });
     } finally {
       setVerifyLoading(false);
     }
@@ -613,10 +660,9 @@ function App() {
               <strong className="text-black dark:text-gray-200">Document Hash:</strong> <span className="text-black dark:text-gray-300">{signResult.hash}</span><br />
               <strong className="text-black dark:text-gray-200">Digital Signature:</strong> <span className="text-xs break-all text-black dark:text-gray-300">{signResult.signature}</span><br />
               <strong className="text-black dark:text-gray-200">Signer:</strong> <span className="text-black dark:text-gray-300">{signResult.signer}</span><br />
-              <strong className="text-black dark:text-gray-200">Nonce:</strong> <span className="text-black dark:text-gray-300">{signResult.nonce}</span><br />
               <strong className="text-black dark:text-gray-200">Transaction:</strong>{' '}
               <a 
-                href={`${import.meta.env.VITE_EXPLORER_URL || 'https://explorer.hoodi.io'}/tx/${signResult.txHash}`}
+                href={`${import.meta.env.VITE_EXPLORER_URL}/tx/${signResult.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
@@ -693,21 +739,34 @@ function App() {
 
           {verifyResult && (
             <div className={`mt-4 p-4 rounded-lg text-center font-bold ${
-              verifyResult.valid && verifyResult.signatureValid
+              verifyResult.error
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800'
+                : verifyResult.valid && verifyResult.signatureValid
                 ? 'bg-[#C9FDF2] dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-[#85D1DB]/50 dark:border-green-800'
                 : verifyResult.valid && !verifyResult.signatureValid
                 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-800'
                 : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800'
             }`}>
-              {verifyResult.valid ? (
+              {verifyResult.error ? (
+                <>
+                  ❌ INVALID DOCUMENT HASH<br />
+                  <div className="text-left mt-2 text-sm">
+                    <strong>Error:</strong> {verifyResult.errorMessage}
+                    <div className="mt-2 text-red-700 dark:text-red-400">
+                      💡 <strong>Tip:</strong> Document hash should be exactly 64 hexadecimal characters (0-9, a-f, A-F)<br />
+                      Example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+                    </div>
+                  </div>
+                </>
+              ) : verifyResult.valid ? (
                 verifyResult.signatureValid ? (
                   <>
-                    Document is VALID & CRYPTOGRAPHICALLY SECURE<br />
+                    ✅ Document is VALID & CRYPTOGRAPHICALLY SECURE<br />
                     <div className="text-left mt-2 text-sm">
                       <strong>Document Title:</strong> {verifyResult.documentTitle}<br />
                       <strong>Signer:</strong> {verifyResult.signer}<br />
                       <strong>Signed at:</strong> {verifyResult.timestamp}<br />
-                      <strong>Signature Status:</strong> <span className="text-green-600 dark:text-green-400">Cryptographically Valid</span><br />
+                      <strong>Signature Status:</strong> <span className="text-green-600 dark:text-green-400">✅ Cryptographically Valid</span><br />
                       <strong>Digital Signature:</strong> <span className="text-xs break-all">{verifyResult.signature}</span><br />
                       <strong>Document Hash:</strong> {verifyResult.hash}
                       {!verifyResult.matchesSigner && (
