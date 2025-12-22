@@ -3,7 +3,7 @@
 **A secure Web3 dApp for cryptographically signing and verifying documents on the blockchain**
 
 ![MetaSign](https://img.shields.io/badge/Built%20with-React%20%2B%20Solidity-blue)
-![License](https://img.shields.io/badge/License-GPLv3-blue)
+![License](https://img.shields.io/badge/License-Apache--2.0-blue)
 
 ## Features
 
@@ -130,7 +130,6 @@ src/
 ## Documentation
 
 ### Additional Resources
-- [`SETUP.md`](SETUP.md) - Detailed environment setup guide
 - [`contracts/README.md`](contracts/README.md) - Smart contract documentation
 
 ### API Reference
@@ -140,7 +139,7 @@ src/
 // Sign a document
 function signDocument(bytes32 documentHash, string documentTitle, bytes signature, uint256 nonce)
 
-// Verify a document (view function - no gas)
+// Verify a document (no gas)
 function verifyDocument(bytes32 documentHash) returns (bool exists, address signer, uint256 timestamp, string documentTitle, bytes signature, bool signatureValid)
 
 // Get signer's nonce
@@ -152,7 +151,7 @@ function getDocumentsBySigner(address signer) returns (bytes32[])
 
 ## Contributing
 
-We welcome contributions! Please follow these steps:
+I welcome contributions! Please follow these steps:
 
 1. **Fork the repository**
 2. **Create feature branch** (`git checkout -b feature/amazing-feature`)
@@ -160,15 +159,10 @@ We welcome contributions! Please follow these steps:
 4. **Push to branch** (`git push origin feature/amazing-feature`)
 5. **Open Pull Request**
 
-### Development Guidelines
-- Follow existing code style
-- Add tests for new features
-- Update documentation
-- Ensure security best practices
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0**.
+This project is licensed under the **Apache License 2.0**.
 
 See the [LICENSE](LICENSE) file for details.
 
@@ -189,6 +183,6 @@ See the [LICENSE](LICENSE) file for details.
 
 <div align="center">
 
-[🌐 Live Demo](https://meta-sign.vercel.app) • [📚 Documentation](https://github.com/codercyco/MetaSign/wiki) • [🐛 Report Bug](https://github.com/codercyco/MetaSign/issues)
+[🌐 Live Demo](https://meta-sign.vercel.app) • [ Documentation](https://github.com/codercyco/MetaSign/wiki) • [ Report Bug](https://github.com/codercyco/MetaSign/issues)
 
 </div>
