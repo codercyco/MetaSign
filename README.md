@@ -95,7 +95,10 @@ VITE_EXPLORER_URL=
 contracts/
 ├── MetaSign.sol          # Main contract with ECDSA verification
 ├── package.json          # OpenZeppelin dependencies
-└── deploy.sol            # Deployment documentation
+└── README.md             # Contract documentation
+
+scripts/
+└── deploy.js             # Deployment script
 ```
 
 ### Frontend Stack
