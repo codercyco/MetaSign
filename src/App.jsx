@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
+import sidebarIcon from './assets/sidebar.png';
+
+// Gemini API configuration
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 // Smart contract ABI (Updated for secure version)
 const contractABI = [
@@ -105,6 +110,12 @@ function App() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyData, setHistoryData] = useState([]);
 
+  // Chatbot states
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+
   // Load theme preference on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -155,6 +166,82 @@ function App() {
     setDarkMode(!darkMode);
     document.body.classList.toggle('dark');
     localStorage.setItem('theme', !darkMode ? 'dark' : 'light');
+  };
+
+  // Chatbot functions
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const sendMessageToGemini = async (message) => {
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'your_gemini_api_key_here') {
+      return "Please configure your Gemini API key in the environment variables.";
+    }
+
+    try {
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are a helpful assistant for MetaSign, a blockchain document signing and verification dApp. 
+                         Context: MetaSign allows users to cryptographically sign documents on the blockchain and verify their authenticity. 
+                         It uses Ethereum smart contracts with ECDSA signature verification and anti-replay protection.
+                         
+                         User question: ${message}`
+                }
+              ]
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.candidates[0]?.content?.parts[0]?.text || "I'm sorry, I couldn't generate a response.";
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      return "I'm sorry, there was an error processing your request. Please check your API key and try again.";
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!currentMessage.trim()) return;
+
+    const userMessage = currentMessage.trim();
+    setCurrentMessage('');
+    
+    // Add user message to chat
+    const newUserMessage = { role: 'user', content: userMessage, timestamp: new Date() };
+    setChatMessages(prev => [...prev, newUserMessage]);
+    
+    setChatLoading(true);
+    
+    try {
+      const aiResponse = await sendMessageToGemini(userMessage);
+      const aiMessage = { role: 'assistant', content: aiResponse, timestamp: new Date() };
+      setChatMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      const errorMessage = { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.', timestamp: new Date() };
+      setChatMessages(prev => [...prev, errorMessage]);
+    }
+    
+    setChatLoading(false);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   // Disconnect wallet (clear local state)
@@ -656,21 +743,31 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#B3EBF2] via-[#C9FDF2] to-[#B6F2D1] dark:from-gray-900 dark:to-gray-800 p-5 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto bg-white/80 dark:bg-gray-800/95 rounded-3xl shadow-2xl p-8 backdrop-blur-sm transition-all duration-300 border border-white/30 dark:border-gray-700">
-        
-        {/* Header */}
-        <div className="text-center mb-8 relative">
-          <button
-            onClick={toggleTheme}
-            className="absolute top-0 right-0 w-12 h-12 bg-[#B3EBF2] dark:bg-gray-700 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 hover:rotate-12 transition-all duration-300 shadow-lg border-2 border-[#85D1DB]/60 dark:border-gray-600"
-          >
-            <span className="text-2xl">{darkMode ? '🌙' : '☀️'}</span>
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-[#B3EBF2] via-[#C9FDF2] to-[#B6F2D1] dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 flex">
+      {/* Sidebar Toggle Button */}
+      <button
+        onClick={toggleSidebar}
+        className="fixed top-4 right-4 z-50 w-12 h-12 bg-[#B3EBF2] dark:bg-gray-700 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-300 shadow-lg border-2 border-[#85D1DB]/60 dark:border-gray-600"
+      >
+        <img src={sidebarIcon} alt="Chat" className="w-6 h-6" />
+      </button>
+
+      {/* Main App Container */}
+      <div className={`transition-all duration-300 p-5 ${sidebarOpen ? 'w-2/3' : 'w-full'}`}>
+        <div className="max-w-4xl mx-auto bg-white/80 dark:bg-gray-800/95 rounded-3xl shadow-2xl p-8 backdrop-blur-sm transition-all duration-300 border border-white/30 dark:border-gray-700">
           
-          <div className="flex justify-center items-center">
-            <img src="/logo.svg" alt="MetaSign Logo" className="h-16 w-16 mr-4"/>
-            <h1 className="text-5xl md:text-6xl title-font font-extrabold bg-gradient-to-l from-[#4edbed] via-[#87ecb4] to-[#92e6d4] bg-clip-text text-transparent">
+          {/* Header */}
+          <div className="text-center mb-8 relative">
+            <button
+              onClick={toggleTheme}
+              className="absolute top-0 right-0 w-12 h-12 bg-[#B3EBF2] dark:bg-gray-700 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 hover:rotate-12 transition-all duration-300 shadow-lg border-2 border-[#85D1DB]/60 dark:border-gray-600"
+            >
+              <span className="text-2xl">{darkMode ? '🌙' : '☀️'}</span>
+            </button>
+            
+            <div className="flex justify-center items-center">
+              <img src="/logo.svg" alt="MetaSign Logo" className="h-16 w-16 mr-4"/>
+              <h1 className="text-5xl md:text-6xl title-font font-extrabold bg-gradient-to-l from-[#4edbed] via-[#87ecb4] to-[#92e6d4] bg-clip-text text-transparent">
               MetaSign
             </h1>
           </div>
@@ -1242,6 +1339,99 @@ function App() {
         </div>
       </div>
     </div>
+
+    {/* Chatbot Sidebar */}
+    {sidebarOpen && (
+      <div className="w-1/3 bg-gradient-to-br from-[#F0FFFB] to-[#E6FBFF] dark:from-gray-800 dark:to-gray-900 border-l-2 border-[#85D1DB] dark:border-gray-600 flex flex-col h-screen shadow-2xl">
+        {/* Sidebar Header */}
+        <div className="p-6 border-b-2 border-[#85D1DB]/30 dark:border-gray-600 bg-gradient-to-r from-[#B3EBF2] to-[#85D1DB] dark:from-gray-700 dark:to-gray-800">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                <span className="text-lg">🤖</span>
+              </div>
+              <h3 className="text-xl font-bold text-[#1F4850] dark:text-white">MetaSign Assistant</h3>
+            </div>
+            <button
+              onClick={toggleSidebar}
+              className="w-8 h-8 bg-white/20 hover:bg-white/30 text-[#1F4850] dark:text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="text-sm text-[#2F7A87] dark:text-gray-300">
+            I'm here to help you with MetaSign and blockchain document signing!
+          </p>
+        </div>
+
+        {/* Chat Messages */}
+        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gradient-to-b from-[#F0FFFB]/50 to-[#E6FBFF]/50 dark:from-gray-800/50 dark:to-gray-900/50">
+          {chatMessages.length === 0 && (
+            <div className="text-center text-[#2F7A87] dark:text-gray-400 mt-12">
+              <div className="w-16 h-16 bg-[#B3EBF2] dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">💬</span>
+              </div>
+              <h4 className="text-lg font-bold mb-2 text-[#1F4850] dark:text-gray-200">Welcome to MetaSign Assistant!</h4>
+              <p className="text-sm px-4 leading-relaxed">
+                Ask me about document signing, verification, blockchain technology, 
+                or any features of MetaSign. I'm here to help!
+              </p>
+            </div>
+          )}
+
+          {chatMessages.map((message, index) => (
+            <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-sm px-4 py-3 rounded-2xl shadow-lg transition-all duration-200 ${
+                message.role === 'user'
+                  ? 'bg-gradient-to-r from-[#B3EBF2] to-[#85D1DB] text-[#1F4850] ml-2'
+                  : 'bg-white/80 dark:bg-gray-700/80 text-[#1F4850] dark:text-gray-200 mr-2 border border-[#85D1DB]/20 dark:border-gray-600'
+              }`}>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                <p className="text-xs opacity-70 mt-2 text-right">
+                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          ))}
+
+          {chatLoading && (
+            <div className="flex justify-start">
+              <div className="bg-white/80 dark:bg-gray-700/80 px-4 py-3 rounded-2xl shadow-lg border border-[#85D1DB]/20 dark:border-gray-600">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-[#85D1DB] rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-[#85D1DB] rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-[#85D1DB] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  <p className="text-sm text-[#2F7A87] dark:text-gray-300 ml-2">Thinking...</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Chat Input */}
+        <div className="p-4 border-t-2 border-[#85D1DB]/30 dark:border-gray-600 bg-gradient-to-r from-[#F0FFFB] to-[#E6FBFF] dark:from-gray-800 dark:to-gray-900">
+          <div className="flex space-x-3">
+            <textarea
+              value={currentMessage}
+              onChange={(e) => setCurrentMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask me anything about MetaSign..."
+              className="flex-1 p-3 border-2 border-[#85D1DB]/40 dark:border-gray-600 rounded-xl bg-white/90 dark:bg-gray-800 text-[#1F4850] dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-[#5FB6C6] focus:border-[#5FB6C6] transition-all duration-300 placeholder-[#2F7A87]/60 dark:placeholder-gray-400"
+              rows="2"
+              disabled={chatLoading}
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={chatLoading || !currentMessage.trim()}
+              className="px-6 py-3 bg-gradient-to-r from-[#85D1DB] to-[#B6F2D1] hover:from-[#5FB6C6] hover:to-[#85D1DB] text-[#0F2A30] rounded-xl font-bold transition-all duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 hover:shadow-lg hover:-translate-y-0.5"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
   );
 }
 
