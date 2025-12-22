@@ -5,21 +5,23 @@ This directory contains the Solidity smart contract for the MetaSign document si
 ## Contract Overview
 
 **File**: `MetaSign.sol`  
-**License**: MIT  
+**License**: Apache 2.0  
 **Solidity Version**: ^0.8.19
 
 ## Features
 
 ### Core Functions
 
-1. **`signDocument(bytes32 documentHash, string documentTitle, bytes signature)`**
+1. **`signDocument(bytes32 documentHash, string documentTitle, bytes signature, uint256 nonce)`**
    - Stores document hash, title, and digital signature on blockchain
    - Records signer address and timestamp automatically
    - Prevents duplicate signatures for same document hash
+   - Uses nonce system to prevent replay attacks
    - Emits `DocumentSigned` event
 
 2. **`verifyDocument(bytes32 documentHash)`**
-   - Returns complete document record (exists, signer, timestamp, title, signature)
+   - Returns complete document record (exists, signer, timestamp, title, signature, signatureValid)
+   - Cryptographically validates signature authenticity
    - View function (no gas cost for queries)
    - Used by dApp for document verification
 
@@ -30,9 +32,11 @@ This directory contains the Solidity smart contract for the MetaSign document si
 
 ### Additional Utility Functions
 
+- `getSignerNonce(address)` - Get current nonce for a signer
 - `getSignedDocumentCount(address)` - Count of documents signed by address
 - `documentExists(bytes32)` - Quick existence check
 - `getDocumentInfo(bytes32)` - Document info without signature data
+- `logVerification(bytes32)` - Log verification attempt (emits event)
 - `getContractInfo()` - Contract name and version
 
 ## Data Structures
@@ -45,12 +49,14 @@ struct DocumentRecord {
     uint256 timestamp;     // Unix timestamp of signing
     string documentTitle;  // Human-readable document name
     bytes signature;       // Digital signature of document hash
+    uint256 nonce;         // Unique nonce for replay protection
 }
 ```
 
 ### Storage Mappings
 - `mapping(bytes32 => DocumentRecord) public documents` - Document hash to record
 - `mapping(address => bytes32[]) public documentsBySigner` - Signer to document list
+- `mapping(address => uint256) public signerNonces` - Signer to current nonce for replay protection
 
 ## Security Features
 
@@ -59,6 +65,12 @@ struct DocumentRecord {
 - Document title cannot be empty string
 - Digital signature cannot be empty
 - Prevents duplicate document signing
+- Validates nonce to prevent replay attacks
+
+### Cryptographic Security
+- Uses ECDSA signature verification
+- Signature validation includes document hash, title, nonce, and contract address
+- Nonce system prevents signature replay attacks
 
 ### Immutability
 - Once signed, document records cannot be modified
@@ -68,6 +80,7 @@ struct DocumentRecord {
 ## Gas Optimization
 
 - Uses `calldata` for external function parameters
+- Custom errors instead of require strings for gas efficiency
 - Efficient storage layout for structs
 - View functions for read operations
 - Events for off-chain indexing
@@ -85,18 +98,39 @@ npm install @openzeppelin/contracts
 npx hardhat compile
 ```
 
-### Deploy Script Example
-```javascript
-async function main() {
-  const MetaSign = await ethers.getContractFactory("MetaSign");
-  const metaSign = await MetaSign.deploy();
-  await metaSign.deployed();
-  
-  console.log("MetaSign deployed to:", metaSign.address);
-}
+### Deployment Script
+
+The project includes a ready-to-use deployment script at `../scripts/deploy.js`:
+
+**Features:**
+- Deploys MetaSign contract to any network
+- Provides deployment confirmation with contract address
+- Includes automatic Etherscan verification for public networks
+- Handles errors gracefully
+
+**Usage:**
+```bash
+# Deploy to local Hardhat network
+npx hardhat run scripts/deploy.js
+
+# Deploy to testnet (e.g., Sepolia)
+npx hardhat run scripts/deploy.js --network sepolia
+
+# Deploy to mainnet
+npx hardhat run scripts/deploy.js --network mainnet
 ```
 
-### Verification
+**Script Output:**
+```
+Deploying MetaSign contract...
+MetaSign deployed to: 0x1234567890123456789012345678901234567890
+Transaction hash: 0xabcdef...
+Waiting for block confirmations...
+Verifying contract on Etherscan...
+```
+
+### Manual Verification
+If automatic verification fails, verify manually:
 ```bash
 npx hardhat verify --network <network> <contract-address>
 ```
@@ -106,9 +140,10 @@ npx hardhat verify --network <network> <contract-address>
 The contract ABI matches exactly with the dApp's `contractABI` in `src/App.jsx`:
 
 ### Required Functions (dApp Integration)
-- `signDocument(bytes32,string,bytes)` → `nonpayable`
-- `verifyDocument(bytes32)` → `view` returns `(bool,address,uint256,string,bytes)`
+- `signDocument(bytes32,string,bytes,uint256)` → `nonpayable`
+- `verifyDocument(bytes32)` → `view` returns `(bool,address,uint256,string,bytes,bool)`
 - `getDocumentsBySigner(address)` → `view` returns `bytes32[]`
+- `getSignerNonce(address)` → `view` returns `uint256`
 
 ### Environment Setup
 After deployment, update `.env`:
@@ -141,7 +176,8 @@ event DocumentSigned(
     address indexed signer,
     string documentTitle,
     uint256 timestamp,
-    bytes signature
+    bytes signature,
+    uint256 nonce
 );
 ```
 
@@ -150,7 +186,8 @@ event DocumentSigned(
 event DocumentVerified(
     bytes32 indexed documentHash,
     address indexed verifier,
-    bool exists
+    bool exists,
+    bool signatureValid
 );
 ```
 
@@ -175,4 +212,4 @@ describe("MetaSign", function() {
 
 ## License
 
-MIT License - see contract header for full license text.
+Apache 2.0 License - see contract header for full license text.

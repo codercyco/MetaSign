@@ -16,6 +16,6 @@
     "deploy": "hardhat run scripts/deploy.js"
   },
   "keywords": ["solidity", "smart-contracts", "ethereum", "document-signing"],
-  "author": "MetaSign Team",
-  "license": "MIT"
+  "author": "Ishara Deshapriya",
+  "license": "Apache-2.0"
 }
