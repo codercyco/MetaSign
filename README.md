@@ -25,6 +25,14 @@
 - **Gas Optimized** - Efficient smart contract design
 - **Transaction Tracking** - Direct links to blockchain explorer
 
+### **AI Chatbot Assistant**
+- **Gemini AI Powered** - Integrated Google Gemini assistant
+- **Streaming Responses** - Real-time token-by-token reply rendering via Server-Sent Events
+- **Markdown Rendering** - Rich formatted answers with syntax highlighting
+- **MetaSign-Scoped** - Answers only MetaSign and blockchain-related questions
+- **Sidebar UI** - Collapsible and resizable chat panel that doesn't interrupt your workflow
+- **Prompt Injection Protection** - System level guardrails prevent role/behavior manipulation
+
 ## Quick Start
 
 ### Prerequisites
@@ -62,6 +70,10 @@ VITE_CHAIN_ID=
 VITE_CHAIN_NAME=
 VITE_RPC_URL=
 VITE_EXPLORER_URL=
+
+# AI Chatbot (Google Gemini)
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+VITE_GEMINI_MODEL=gemini-2.5-flash-lite   # optional, this is the default
 ```
 
 ## Usage Guide
@@ -87,6 +99,12 @@ VITE_EXPLORER_URL=
 - Click "Load My Documents"
 - Browse all signed documents
 - Access transaction details
+
+### 5. **AI Chatbot Assistant**
+- Click the sidebar toggle button to open the chat panel
+- Ask any question about MetaSign, document signing, or blockchain concepts
+- Receive streaming, Markdown-formatted answers in real time
+- The assistant is scoped to MetaSign topics only
 
 ## Architecture
 
@@ -116,6 +134,9 @@ src/
 - **Ethers.js 6.13.4** - Ethereum interaction
 - **Tailwind CSS 3.4.17** - Utility-first styling
 - **Solidity ^0.8.19** - Smart contract development
+- **Google Gemini API** - AI chatbot backend
+- **ReactMarkdown + remark-gfm** - Markdown rendering in chat responses
+- **rehype-highlight** - Syntax highlighting for code blocks in chat
 
 ## Security Features
 
@@ -151,6 +172,21 @@ function getSignerNonce(address signer) returns (uint256)
 // Get documents by signer
 function getDocumentsBySigner(address signer) returns (bytes32[])
 ```
+
+### Chatbot API (Google Gemini)
+
+The chatbot uses the Gemini streaming endpoint:
+
+```
+POST https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse
+```
+
+| Environment Variable | Description | Default |
+|---|---|---|
+| `VITE_GEMINI_API_KEY` | Google AI Studio API key | *(required)* |
+| `VITE_GEMINI_MODEL` | Gemini model identifier | `gemini-2.5-flash-lite` |
+
+Obtain a free API key at [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ## Contributing
 
