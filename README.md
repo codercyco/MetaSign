@@ -113,7 +113,10 @@ VITE_GEMINI_MODEL=gemini-2.5-flash-lite   # optional, this is the default
 contracts/
 ├── MetaSign.sol          # Main contract with ECDSA verification
 ├── package.json          # OpenZeppelin dependencies
-└── deploy.sol            # Deployment documentation
+└── README.md             # Contract documentation
+
+scripts/
+└── deploy.js             # Deployment script
 ```
 
 ### Frontend Stack
